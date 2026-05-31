@@ -1,9 +1,10 @@
-import { Switch, Route, Redirect, Router as WouterRouter, useLocation } from "wouter"
+import { Switch, Route, Redirect, Router as WouterRouter } from "wouter"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider, useAuth } from "@/lib/auth-context"
+import { useCurrentUser } from "@/lib/user-api"
 import { Loader2 } from "lucide-react"
 import NotFound from "@/pages/not-found"
 import MarketingPage from "@/pages/marketing"
@@ -35,6 +36,16 @@ const queryClient = new QueryClient({
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "")
 
+export const THEMES = [
+  { id: "gold",     name: "Luxe Gold",         description: "Warm amber luxury",     swatches: ["#C4943A", "#E8C88A", "#FDF6E8"] },
+  { id: "midnight", name: "Midnight",           description: "Dark & sophisticated",  swatches: ["#C4943A", "#2D2B3D", "#141320"] },
+  { id: "ocean",    name: "Ocean Blue",         description: "Deep nautical blue",    swatches: ["#1B5FD4", "#4A8FE8", "#EEF3FD"] },
+  { id: "emerald",  name: "Emerald Prestige",   description: "Rich emerald green",    swatches: ["#1A8C5C", "#42B47E", "#EEF7F2"] },
+  { id: "rose",     name: "Rose",               description: "Elegant rose tones",    swatches: ["#D42A5E", "#E8688E", "#FDF0F4"] },
+  { id: "slate",    name: "Slate Pro",          description: "Cool professional gray",swatches: ["#3B5074", "#6B84A4", "#F0F2F6"] },
+  { id: "violet",   name: "Violet Executive",   description: "Bold executive purple", swatches: ["#6D28D9", "#9F6FE8", "#F5F0FE"] },
+]
+
 function LoadingScreen() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background">
@@ -55,6 +66,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function OnboardingGuard({ children }: { children: React.ReactNode }) {
+  const { data: profile, isLoading } = useCurrentUser()
+  if (isLoading) return <LoadingScreen />
+  if (profile && !profile.onboarded) return <Redirect to="/onboarding" />
+  return <>{children}</>
+}
+
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth()
   if (loading) return <LoadingScreen />
@@ -72,24 +90,26 @@ function HomeRedirect() {
 function DashboardRoutes() {
   return (
     <ProtectedRoute>
-      <DashboardLayout>
-        <Switch>
-          <Route path="/dashboard" component={OverviewPage} />
-          <Route path="/dashboard/leads" component={LeadsPage} />
-          <Route path="/dashboard/properties" component={PropertiesPage} />
-          <Route path="/dashboard/messages" component={MessagesPage} />
-          <Route path="/dashboard/analytics" component={AnalyticsPage} />
-          <Route path="/dashboard/ai-intelligence" component={AIIntelligencePage} />
-          <Route path="/dashboard/automations" component={AutomationsPage} />
-          <Route path="/dashboard/team" component={TeamPage} />
-          <Route path="/dashboard/deals" component={DealsPage} />
-          <Route path="/dashboard/documents" component={DocumentsPage} />
-          <Route path="/dashboard/calendar" component={CalendarPage} />
-          <Route path="/dashboard/settings" component={SettingsPage} />
-          <Route path="/dashboard/integrations" component={IntegrationsPage} />
-          <Route component={NotFound} />
-        </Switch>
-      </DashboardLayout>
+      <OnboardingGuard>
+        <DashboardLayout>
+          <Switch>
+            <Route path="/dashboard" component={OverviewPage} />
+            <Route path="/dashboard/leads" component={LeadsPage} />
+            <Route path="/dashboard/properties" component={PropertiesPage} />
+            <Route path="/dashboard/messages" component={MessagesPage} />
+            <Route path="/dashboard/analytics" component={AnalyticsPage} />
+            <Route path="/dashboard/ai-intelligence" component={AIIntelligencePage} />
+            <Route path="/dashboard/automations" component={AutomationsPage} />
+            <Route path="/dashboard/team" component={TeamPage} />
+            <Route path="/dashboard/deals" component={DealsPage} />
+            <Route path="/dashboard/documents" component={DocumentsPage} />
+            <Route path="/dashboard/calendar" component={CalendarPage} />
+            <Route path="/dashboard/settings" component={SettingsPage} />
+            <Route path="/dashboard/integrations" component={IntegrationsPage} />
+            <Route component={NotFound} />
+          </Switch>
+        </DashboardLayout>
+      </OnboardingGuard>
     </ProtectedRoute>
   )
 }
@@ -97,9 +117,11 @@ function DashboardRoutes() {
 function LeadProfileRoute({ params }: { params: { id: string } }) {
   return (
     <ProtectedRoute>
-      <DashboardLayout>
-        <LeadProfilePage params={params} />
-      </DashboardLayout>
+      <OnboardingGuard>
+        <DashboardLayout>
+          <LeadProfilePage params={params} />
+        </DashboardLayout>
+      </OnboardingGuard>
     </ProtectedRoute>
   )
 }
@@ -130,7 +152,12 @@ function App() {
   return (
     <WouterRouter base={basePath}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="gold"
+          enableSystem={false}
+          themes={["gold", "midnight", "ocean", "emerald", "rose", "slate", "violet"]}
+        >
           <TooltipProvider>
             <AuthProvider>
               <Router />

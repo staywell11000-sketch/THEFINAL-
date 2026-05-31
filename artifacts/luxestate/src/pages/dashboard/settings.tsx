@@ -12,9 +12,10 @@ import { useSettings, useUpdateSettings, useUploadImage, type SettingsUpdate } f
 import { toast } from "sonner"
 import {
   User, Bell, Shield, Palette, MessageCircle, Building2,
-  Sun, Moon, Monitor, Link2, Camera, Upload, Loader2,
+  Link2, Camera, Upload, Loader2,
   Check, Lock, Clock, Mail, Phone, Save, RefreshCw, AlertCircle,
 } from "lucide-react"
+import { THEMES } from "@/App"
 
 // ─── Tab Config ───────────────────────────────────────────
 
@@ -458,27 +459,36 @@ export default function SettingsPage() {
                 {/* Theme */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-3 block">Color Theme</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: "light",  label: "Light",  icon: Sun },
-                      { id: "dark",   label: "Dark",   icon: Moon },
-                      { id: "system", label: "System", icon: Monitor },
-                    ].map((opt) => (
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {THEMES.map((t) => (
                       <button
-                        key={opt.id}
-                        onClick={() => handleThemeChange(opt.id)}
+                        key={t.id}
+                        onClick={() => handleThemeChange(t.id)}
                         className={cn(
-                          "flex flex-col items-center gap-2 rounded-xl border p-4 transition-all",
-                          theme === opt.id
-                            ? "border-primary bg-primary/10 shadow-sm"
-                            : "border-border/50 hover:border-primary/50 hover:bg-secondary/30"
+                          "flex items-center gap-3.5 rounded-xl border px-4 py-3 text-left transition-all",
+                          theme === t.id
+                            ? "border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20"
+                            : "border-border/50 hover:border-primary/40 hover:bg-secondary/20"
                         )}
                       >
-                        <opt.icon className={cn("h-6 w-6", theme === opt.id ? "text-primary" : "text-muted-foreground")} />
-                        <span className={cn("text-sm font-medium", theme === opt.id ? "text-primary" : "text-muted-foreground")}>
-                          {opt.label}
-                        </span>
-                        {theme === opt.id && <Check className="h-3.5 w-3.5 text-primary" />}
+                        <div className="flex flex-shrink-0 -space-x-1.5">
+                          {t.swatches.map((color, i) => (
+                            <div
+                              key={i}
+                              className="h-7 w-7 rounded-full border-2 border-white shadow-sm"
+                              style={{ background: color, zIndex: 3 - i }}
+                            />
+                          ))}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-sm font-semibold", theme === t.id ? "text-primary" : "text-foreground")}>{t.name}</p>
+                          <p className="text-xs text-muted-foreground">{t.description}</p>
+                        </div>
+                        {theme === t.id && (
+                          <div className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                            <Check className="h-3 w-3 text-primary-foreground" />
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>

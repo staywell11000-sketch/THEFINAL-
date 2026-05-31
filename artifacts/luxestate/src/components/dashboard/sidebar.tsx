@@ -9,8 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
-  Sun,
-  Moon,
   MessageSquare,
   Brain,
   Zap,
@@ -23,25 +21,24 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useTheme } from "next-themes"
 import { useAuth } from "@/lib/auth-context"
 import { useCurrentUser } from "@/lib/user-api"
 import { useLocation as useWouterLocation } from "wouter"
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/leads", label: "Leads", icon: Users },
-  { href: "/dashboard/integrations", label: "Lead Sources", icon: Cable },
-  { href: "/dashboard/properties", label: "Properties", icon: Building2 },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/ai-intelligence", label: "AI Intelligence", icon: Brain },
-  { href: "/dashboard/automations", label: "Automations", icon: Zap },
-  { href: "/dashboard/team", label: "Team", icon: Users2 },
-  { href: "/dashboard/deals", label: "Deals", icon: ClipboardList },
-  { href: "/dashboard/documents", label: "Documents", icon: FolderOpen },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard",                label: "Overview",        icon: LayoutDashboard },
+  { href: "/dashboard/leads",          label: "Leads",           icon: Users },
+  { href: "/dashboard/integrations",   label: "Lead Sources",    icon: Cable },
+  { href: "/dashboard/properties",     label: "Properties",      icon: Building2 },
+  { href: "/dashboard/messages",       label: "Messages",        icon: MessageSquare },
+  { href: "/dashboard/analytics",      label: "Analytics",       icon: BarChart3 },
+  { href: "/dashboard/ai-intelligence",label: "AI Intelligence", icon: Brain },
+  { href: "/dashboard/automations",    label: "Automations",     icon: Zap },
+  { href: "/dashboard/team",           label: "Team",            icon: Users2 },
+  { href: "/dashboard/deals",          label: "Deals",           icon: ClipboardList },
+  { href: "/dashboard/documents",      label: "Documents",       icon: FolderOpen },
+  { href: "/dashboard/calendar",       label: "Calendar",        icon: CalendarDays },
+  { href: "/dashboard/settings",       label: "Settings",        icon: Settings },
 ]
 
 type SidebarProps = {
@@ -54,7 +51,6 @@ type SidebarProps = {
 
 export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unreadCount }: SidebarProps) {
   const [location] = useLocation()
-  const { theme, setTheme } = useTheme()
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return location === "/dashboard"
@@ -67,6 +63,7 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
       transition={{ duration: 0.25, ease: "easeInOut" }}
       className="relative flex flex-col border-r border-sidebar-border bg-sidebar h-full overflow-hidden"
     >
+      {/* ── Brand header ─────────────────────────────── */}
       <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-sidebar-border px-4">
         <AnimatePresence>
           {!collapsed && (
@@ -75,24 +72,29 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.15 }}
-              className="flex items-center gap-2"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
-                <span className="text-sm font-bold text-primary-foreground">L</span>
-              </div>
-              <span className="text-base font-semibold tracking-tight text-sidebar-foreground">
-                Luxe<span className="text-primary">State</span>
-              </span>
+              <Link href="/dashboard">
+                <div className="flex items-center gap-2 cursor-pointer select-none">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
+                    <span className="text-sm font-bold text-primary-foreground">L</span>
+                  </div>
+                  <span className="text-base font-semibold tracking-tight text-sidebar-foreground">
+                    Luxe<span className="text-primary">State</span>
+                  </span>
+                </div>
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>
 
         {collapsed && (
-          <div className="flex w-full items-center justify-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
-              <span className="text-sm font-bold text-primary-foreground">L</span>
+          <Link href="/dashboard">
+            <div className="flex w-full items-center justify-center cursor-pointer">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
+                <span className="text-sm font-bold text-primary-foreground">L</span>
+              </div>
             </div>
-          </div>
+          </Link>
         )}
 
         <Button
@@ -104,14 +106,11 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
             collapsed && "absolute right-2 top-4"
           )}
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
 
+      {/* ── Nav items ────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto space-y-0.5 p-2 pt-3">
         {navItems.map((item) => {
           const active = isActive(item.href)
@@ -133,12 +132,7 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
-                <item.icon
-                  className={cn(
-                    "relative z-10 h-4 w-4 flex-shrink-0",
-                    active ? "text-sidebar-primary-foreground" : ""
-                  )}
-                />
+                <item.icon className={cn("relative z-10 h-4 w-4 flex-shrink-0", active ? "text-sidebar-primary-foreground" : "")} />
                 <AnimatePresence>
                   {!collapsed && (
                     <motion.span
@@ -158,6 +152,7 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
         })}
       </nav>
 
+      {/* ── User section ─────────────────────────────── */}
       <div className="flex-shrink-0 border-t border-sidebar-border p-2">
         <SidebarUserSection
           collapsed={collapsed}
@@ -171,19 +166,12 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
 }
 
 function SidebarUserSection({
-  collapsed,
-  notifOpen,
-  onToggleNotif,
-  unreadCount,
+  collapsed, notifOpen, onToggleNotif, unreadCount,
 }: {
-  collapsed: boolean
-  notifOpen: boolean
-  onToggleNotif: () => void
-  unreadCount: number
+  collapsed: boolean; notifOpen: boolean; onToggleNotif: () => void; unreadCount: number
 }) {
   const { user, signOut } = useAuth()
   const { data: profile } = useCurrentUser()
-  const { theme, setTheme } = useTheme()
   const [, setLocation] = useWouterLocation()
 
   const handleSignOut = async () => {
@@ -223,45 +211,59 @@ function SidebarUserSection({
           </span>
         )}
       </Button>
+
+      {!collapsed && (
+        <Link href="/dashboard/settings">
+          <div className="flex min-w-0 flex-1 items-center gap-2 pl-1 rounded-xl py-1 px-1.5 cursor-pointer hover:bg-sidebar-accent transition-colors group">
+            <div className="relative flex-shrink-0">
+              {profile?.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={displayName}
+                  className="h-7 w-7 rounded-full object-cover ring-1 ring-border/40"
+                />
+              ) : (
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-xs font-semibold text-primary-foreground">
+                  {initials}
+                </div>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <p className="truncate text-xs font-semibold text-sidebar-foreground group-hover:text-sidebar-accent-foreground">{displayName}</p>
+              <p className="truncate text-[10px] text-muted-foreground capitalize">{displayTitle}</p>
+            </div>
+            <Settings className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </Link>
+      )}
+
+      {collapsed && (
+        <Link href="/dashboard/settings">
+          <div className="flex items-center justify-center cursor-pointer">
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt={displayName}
+                className="h-8 w-8 rounded-full object-cover ring-1 ring-border/40 hover:ring-primary/50 transition-all"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-xs font-semibold text-primary-foreground hover:ring-2 hover:ring-primary/40 transition-all">
+                {initials}
+              </div>
+            )}
+          </div>
+        </Link>
+      )}
+
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent"
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+        title="Sign out"
+        onClick={handleSignOut}
       >
-        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        <LogOut className="h-3.5 w-3.5" />
       </Button>
-      {!collapsed && (
-        <div className="flex min-w-0 flex-1 items-center gap-1 pl-1">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-xs font-semibold text-primary-foreground">
-            {initials}
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <p className="truncate text-sm font-medium text-sidebar-foreground">{displayName}</p>
-            <p className="truncate text-xs text-muted-foreground capitalize">{displayTitle}</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-            title="Sign out"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
-      {collapsed && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-          title="Sign out"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
-      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Play, Sparkles, Building2, Users, TrendingUp } from "lucide-react"
+import { ArrowRight, Sparkles, Building2, Users, TrendingUp } from "lucide-react"
 import { Link } from "wouter"
 
 const stats = [
@@ -65,23 +65,25 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link href="/dashboard">
+            <Link href="/sign-up">
               <Button
                 size="lg"
                 className="h-14 px-8 text-base font-semibold shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all group"
               >
-                Start Free Trial
+                Get Started
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-14 px-8 text-base font-semibold group bg-background/50 backdrop-blur-sm"
-            >
-              <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-              Watch Demo
-            </Button>
+            <Link href="/sign-in">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-14 px-8 text-base font-semibold group bg-background/50 backdrop-blur-sm"
+              >
+                Sign In
+                <ArrowRight className="ml-2 w-5 h-5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </Button>
+            </Link>
           </motion.div>
 
           <motion.div

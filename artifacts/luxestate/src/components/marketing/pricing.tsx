@@ -17,7 +17,7 @@ const plans = [
       "Property listings (25)",
       "Mobile app access",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     popular: false,
   },
   {
@@ -34,7 +34,7 @@ const plans = [
       "Custom branding",
       "API access",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     popular: true,
   },
   {
@@ -81,7 +81,7 @@ export function Pricing() {
             <span className="text-primary"> Success </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
-            Choose the plan that fits your business. All plans include a 14-day free trial.
+            Choose the plan that fits your business. Simple, transparent pricing with no hidden fees.
           </p>
         </motion.div>
 

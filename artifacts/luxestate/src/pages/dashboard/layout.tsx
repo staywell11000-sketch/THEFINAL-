@@ -1,123 +1,81 @@
 import { useState } from "react"
 import { useLocation } from "wouter"
+import { Link } from "wouter"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { NotificationsPanel, type Notification } from "@/components/dashboard/notifications-panel"
 import { ReactNode } from "react"
 import { motion } from "framer-motion"
-import { Bell, Sun, Moon, Search } from "lucide-react"
+import { Bell, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useTheme } from "next-themes"
 import { useAuth } from "@/lib/auth-context"
 import { useCurrentUser } from "@/lib/user-api"
 
 const SEED_NOTIFICATIONS: Notification[] = [
   {
-    id: 1,
-    type: "lead",
+    id: 1, type: "lead", read: false, group: "today",
     title: "Hot lead detected — Sarah Mitchell",
     description: "AI urgency score jumped to 94. Immediate follow-up recommended before 6 PM.",
     time: "2 minutes ago",
-    read: false,
-    group: "today",
     avatar: "SM",
   },
   {
-    id: 2,
-    type: "message",
+    id: 2, type: "message", read: false, group: "today",
     title: "3 unread messages",
     description: "Emily Rodriguez, Michael Chen, and David Park sent new WhatsApp messages.",
     time: "14 minutes ago",
-    read: false,
-    group: "today",
   },
   {
-    id: 3,
-    type: "reminder",
+    id: 3, type: "reminder", read: false, group: "today",
     title: "Reminder: Follow up with Michael Chen",
     description: "Proposal sent 48 hours ago with no reply. Send updated Beverly Hills comps.",
     time: "1 hour ago",
-    read: false,
-    group: "today",
   },
   {
-    id: 4,
-    type: "deal",
+    id: 4, type: "deal", read: false, group: "today",
     title: "Deal updated — Manhattan Penthouse",
     description: "Sarah Mitchell's deal moved to Due Diligence stage. HOA docs still pending.",
     time: "2 hours ago",
-    read: false,
-    group: "today",
   },
   {
-    id: 5,
-    type: "reminder",
+    id: 5, type: "reminder", read: false, group: "today",
     title: "Viewing scheduled for tomorrow",
-    description: "Beverly Hills Estate tour with Michael Chen at 2:00 PM. Prepare investment ROI materials.",
+    description: "Beverly Hills Estate tour with Michael Chen at 2:00 PM.",
     time: "3 hours ago",
-    read: false,
-    group: "today",
   },
   {
-    id: 6,
-    type: "team",
+    id: 6, type: "team", read: true, group: "today",
     title: "Emily Rodriguez closed her first deal",
     description: "Congratulations! Emily closed a $3.1M deal. Total Q2 revenue now $57.4M.",
     time: "5 hours ago",
-    read: true,
-    group: "today",
   },
   {
-    id: 7,
-    type: "lead",
+    id: 7, type: "lead", read: true, group: "earlier",
     title: "New lead assigned — Lisa Thornton",
     description: "Referred by Amanda Foster. Interested in Beverly Hills properties, budget $4–6M.",
     time: "Yesterday, 4:30 PM",
-    read: true,
-    group: "earlier",
   },
   {
-    id: 8,
-    type: "deal",
+    id: 8, type: "deal", read: true, group: "earlier",
     title: "Deal closed — Malibu Beach House",
     description: "Amanda Foster's $16M deal successfully closed. Commission of $480K earned.",
     time: "Yesterday, 2:15 PM",
-    read: true,
-    group: "earlier",
-  },
-  {
-    id: 9,
-    type: "property",
-    title: "New property listed — Dubai Marina Villa",
-    description: "A $6.2M Dubai Marina Villa has been added to your portfolio by Sarah Mitchell.",
-    time: "May 26, 10:00 AM",
-    read: true,
-    group: "earlier",
-  },
-  {
-    id: 10,
-    type: "system",
-    title: "Weekly performance report ready",
-    description: "Your Q2 week 8 report is ready. Pipeline health: 78/100. Revenue on track.",
-    time: "May 25, 9:00 AM",
-    read: true,
-    group: "earlier",
   },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Overview",
-  "/dashboard/leads": "Leads",
-  "/dashboard/properties": "Properties",
-  "/dashboard/messages": "Messages",
-  "/dashboard/analytics": "Analytics",
+  "/dashboard":              "Overview",
+  "/dashboard/leads":        "Leads",
+  "/dashboard/properties":   "Properties",
+  "/dashboard/messages":     "Messages",
+  "/dashboard/analytics":    "Analytics",
   "/dashboard/ai-intelligence": "AI Intelligence",
-  "/dashboard/automations": "Automations",
-  "/dashboard/team": "Team",
-  "/dashboard/deals": "Deals",
-  "/dashboard/documents": "Documents",
-  "/dashboard/lead-intake": "Lead Intake",
-  "/dashboard/calendar": "Calendar",
-  "/dashboard/settings": "Settings",
+  "/dashboard/automations":  "Automations",
+  "/dashboard/team":         "Team",
+  "/dashboard/deals":        "Deals",
+  "/dashboard/documents":    "Documents",
+  "/dashboard/calendar":     "Calendar",
+  "/dashboard/settings":     "Settings",
+  "/dashboard/integrations": "Lead Sources",
 }
 
 function getPageTitle(location: string): string {
@@ -127,25 +85,17 @@ function getPageTitle(location: string): string {
 }
 
 function GlobalHeader({
-  unreadCount,
-  notifOpen,
-  onToggleNotif,
+  unreadCount, notifOpen, onToggleNotif,
 }: {
-  unreadCount: number
-  notifOpen: boolean
-  onToggleNotif: () => void
+  unreadCount: number; notifOpen: boolean; onToggleNotif: () => void
 }) {
   const [location] = useLocation()
-  const { theme, setTheme } = useTheme()
   const { user } = useAuth()
   const { data: profile } = useCurrentUser()
   const title = getPageTitle(location)
 
   const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
   })
 
   const displayName =
@@ -168,21 +118,8 @@ function GlobalHeader({
       </div>
 
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-muted-foreground hover:text-foreground"
-        >
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
           <Search className="h-4 w-4" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-muted-foreground hover:text-foreground"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
         <Button
@@ -199,38 +136,43 @@ function GlobalHeader({
           )}
         </Button>
 
-        <div className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-sm font-semibold text-primary-foreground">
-          {initials}
-        </div>
+        {/* Avatar → settings */}
+        <Link href="/dashboard/settings">
+          <div className="ml-2 cursor-pointer">
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt={displayName}
+                className="h-8 w-8 rounded-full object-cover ring-2 ring-border/40 hover:ring-primary/50 transition-all"
+                title="Profile Settings"
+              />
+            ) : (
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-sm font-semibold text-primary-foreground hover:ring-2 hover:ring-primary/40 transition-all"
+                title="Profile Settings"
+              >
+                {initials}
+              </div>
+            )}
+          </div>
+        </Link>
       </div>
     </header>
   )
 }
 
-type DashboardLayoutProps = {
-  children: ReactNode
-}
+type DashboardLayoutProps = { children: ReactNode }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false)
-  const [notifOpen, setNotifOpen] = useState(false)
+  const [collapsed, setCollapsed]     = useState(false)
+  const [notifOpen, setNotifOpen]     = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>(SEED_NOTIFICATIONS)
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const handleMarkRead = (id: number) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-  }
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
-
-  const handleDismiss = (id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
-  }
-
-  const sidebarWidth = collapsed ? 72 : 240
+  const handleMarkRead    = (id: number) => setNotifications((p) => p.map((n) => n.id === id ? { ...n, read: true } : n))
+  const handleMarkAllRead = ()           => setNotifications((p) => p.map((n) => ({ ...n, read: true })))
+  const handleDismiss     = (id: number) => setNotifications((p) => p.filter((n) => n.id !== id))
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -248,7 +190,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         onMarkRead={handleMarkRead}
         onMarkAllRead={handleMarkAllRead}
         onDismiss={handleDismiss}
-        sidebarWidth={sidebarWidth}
+        sidebarWidth={collapsed ? 72 : 240}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <GlobalHeader

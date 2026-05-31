@@ -48,18 +48,20 @@ export function Footer() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/dashboard">
+              <Link href="/sign-up">
                 <Button
                   size="lg"
                   className="font-semibold shadow-lg shadow-primary/25 group"
                 >
-                  Start Free Trial
+                  Get Started
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="font-semibold bg-background/50">
-                Schedule Demo
-              </Button>
+              <Link href="/sign-in">
+                <Button size="lg" variant="outline" className="font-semibold bg-background/50">
+                  Sign In
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

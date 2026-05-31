@@ -86,7 +86,7 @@ export function MarketingHeader() {
               </Link>
               <Link href="/sign-up">
                 <Button className="font-medium shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
-                  Start Free Trial
+                  Get Started
                 </Button>
               </Link>
             </div>
@@ -150,7 +150,7 @@ export function MarketingHeader() {
                   </Button>
                 </Link>
                 <Link href="/sign-up" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="w-full font-medium mt-1">Start Free Trial</Button>
+                  <Button className="w-full font-medium mt-1">Get Started</Button>
                 </Link>
               </nav>
             </div>
