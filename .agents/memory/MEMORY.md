@@ -1,0 +1,3 @@
+- [Meta OAuth callback URL](meta-oauth-callback.md) — must use Replit dev domain without port; port-suffixed URLs break Meta's redirect_uri validation.
+- [API server port conflict](api-server-port.md) — port 8080 zombie processes cause EADDRINUSE on restart; kill PIDs from ps aux before restarting the artifact workflow.
+- [Meta Lead Ads sync architecture](meta-lead-sync.md) — pluggable sync service in services/metaLeadSync.ts; scheduled every 15min; dedupes by externalId column; add future platforms alongside runMetaLeadSync().

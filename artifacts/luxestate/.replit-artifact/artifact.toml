@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "LuxeState CRM"
+version = "1.0.0"
+id = "artifacts/luxestate"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21665
+
+[services.development]
+run = "pnpm --filter @workspace/luxestate run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/luxestate", "run", "build" ]
+publicDir = "artifacts/luxestate/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21665"
+BASE_PATH = "/"

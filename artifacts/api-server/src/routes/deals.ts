@@ -1,0 +1,177 @@
+import { Router, type IRouter } from "express";
+import { db, deals, leadsTable } from "@workspace/db";
+import { eq, sql, and, inArray } from "drizzle-orm";
+import { requireAuth } from "../middlewares/requireAuth";
+
+const router: IRouter = Router();
+
+type DealRow = typeof deals.$inferSelect;
+
+function sanitizeDeal(row: DealRow & { leadName?: string | null }) {
+  return {
+    ...row,
+    value: row.value ? String(row.value) : null,
+    commission: row.commission ? String(row.commission) : null,
+    commissionRate: row.commissionRate ? String(row.commissionRate) : null,
+    tags: row.tags ?? [],
+    notes: row.notes ?? "",
+    lostReason: row.lostReason ?? null,
+    status: row.stage === "won" || row.stage === "lost" ? "closed" : "active",
+    leadName: (row as any).leadName ?? null,
+  };
+}
+
+router.get("/deals", requireAuth, async (req, res) => {
+  try {
+    const { stage, status } = req.query as { stage?: string; status?: string };
+
+    const rows = await db
+      .select({
+        id: deals.id,
+        title: deals.title,
+        leadId: deals.leadId,
+        propertyId: deals.propertyId,
+        assignedToId: deals.assignedToId,
+        createdById: deals.createdById,
+        stage: deals.stage,
+        value: deals.value,
+        commission: deals.commission,
+        commissionRate: deals.commissionRate,
+        probability: deals.probability,
+        expectedCloseDate: deals.expectedCloseDate,
+        closedAt: deals.closedAt,
+        lostReason: deals.lostReason,
+        notes: deals.notes,
+        tags: deals.tags,
+        metadata: deals.metadata,
+        createdAt: deals.createdAt,
+        updatedAt: deals.updatedAt,
+        leadName: leadsTable.name,
+      })
+      .from(deals)
+      .leftJoin(leadsTable, eq(deals.leadId, leadsTable.id))
+      .orderBy(sql`${deals.createdAt} DESC`);
+
+    let result = rows.map(sanitizeDeal);
+
+    if (stage && stage !== "all") {
+      result = result.filter((d) => d.stage === stage);
+    }
+
+    if (status) {
+      result = result.filter((d) => d.status === status);
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error("Deals fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch deals" });
+  }
+});
+
+router.get("/deals/:id", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
+
+  try {
+    const [row] = await db
+      .select({
+        id: deals.id,
+        title: deals.title,
+        leadId: deals.leadId,
+        propertyId: deals.propertyId,
+        assignedToId: deals.assignedToId,
+        createdById: deals.createdById,
+        stage: deals.stage,
+        value: deals.value,
+        commission: deals.commission,
+        commissionRate: deals.commissionRate,
+        probability: deals.probability,
+        expectedCloseDate: deals.expectedCloseDate,
+        closedAt: deals.closedAt,
+        lostReason: deals.lostReason,
+        notes: deals.notes,
+        tags: deals.tags,
+        metadata: deals.metadata,
+        createdAt: deals.createdAt,
+        updatedAt: deals.updatedAt,
+        leadName: leadsTable.name,
+      })
+      .from(deals)
+      .leftJoin(leadsTable, eq(deals.leadId, leadsTable.id))
+      .where(eq(deals.id, id));
+
+    if (!row) return void res.status(404).json({ error: "Deal not found" });
+    res.json(sanitizeDeal(row));
+  } catch (err) {
+    console.error("Deal fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch deal" });
+  }
+});
+
+router.post("/deals", requireAuth, async (req, res) => {
+  try {
+    const { id: _id, createdAt: _c, updatedAt: _u, status: _s, leadName: _ln, ...body } = req.body;
+    const userId = (req as any).userId;
+
+    const [row] = await db
+      .insert(deals)
+      .values({
+        ...body,
+        createdById: userId,
+        assignedToId: body.assignedToId ?? userId,
+        stage: body.stage ?? "new",
+      })
+      .returning();
+
+    res.status(201).json(sanitizeDeal(row));
+  } catch (err) {
+    console.error("Deal create error:", err);
+    res.status(500).json({ error: "Failed to create deal" });
+  }
+});
+
+router.patch("/deals/:id", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
+
+  try {
+    const { id: _id, createdAt: _c, updatedAt: _u, status: _s, leadName: _ln, ...body } = req.body;
+
+    const updateData: Partial<typeof deals.$inferInsert> = {
+      ...body,
+      updatedAt: new Date(),
+    };
+
+    if (body.stage === "won" || body.stage === "lost") {
+      updateData.closedAt = new Date();
+    }
+
+    const [row] = await db
+      .update(deals)
+      .set(updateData)
+      .where(eq(deals.id, id))
+      .returning();
+
+    if (!row) return void res.status(404).json({ error: "Deal not found" });
+    res.json(sanitizeDeal(row));
+  } catch (err) {
+    console.error("Deal update error:", err);
+    res.status(500).json({ error: "Failed to update deal" });
+  }
+});
+
+router.delete("/deals/:id", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
+
+  try {
+    await db.delete(deals).where(eq(deals.id, id));
+    res.status(204).send();
+  } catch (err) {
+    console.error("Deal delete error:", err);
+    res.status(500).json({ error: "Failed to delete deal" });
+  }
+});
+
+export default router;
