@@ -1,11 +1,13 @@
 import { Router, type IRouter } from "express";
-import { db } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { db, leadsTable, deals, properties, teamMembers, appointments, activities } from "@workspace/db";
+import { sql, gte, and, eq, lte, or, ne } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/analytics/overview", requireAuth, async (_req, res) => {
+router.get("/analytics/overview", requireAuth, async (req, res) => {
+  const userId = (req as any).userId as string;
+
   try {
     // --- Lead totals ---
     const leadResult = await db.execute<{ total: string; won: string; new_count: string }>(sql`
@@ -16,7 +18,6 @@ router.get("/analytics/overview", requireAuth, async (_req, res) => {
       FROM leads
     `);
     const leadStats = leadResult.rows[0];
-
     const totalLeads = parseInt(leadStats?.total ?? "0", 10);
     const wonLeads = parseInt(leadStats?.won ?? "0", 10);
     const conversionRate = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 1000) / 10 : 0;
@@ -28,14 +29,10 @@ router.get("/analytics/overview", requireAuth, async (_req, res) => {
       GROUP BY source
       ORDER BY count DESC
     `);
-    const sourceRows = sourceResult.rows;
 
     // --- Agent performance ---
     const agentResult = await db.execute<{
-      agent: string;
-      leads: string;
-      won: string;
-      avg_score: string;
+      agent: string; leads: string; won: string; avg_score: string;
     }>(sql`
       SELECT
         COALESCE(assigned_to, 'Unassigned') AS agent,
@@ -48,40 +45,136 @@ router.get("/analytics/overview", requireAuth, async (_req, res) => {
       ORDER BY won DESC, leads DESC
       LIMIT 10
     `);
-    const agentRows = agentResult.rows;
 
-    // --- Deal performance ---
+    // --- Deal totals & stage breakdown ---
     const dealResult = await db.execute<{ stage: string; count: string; total_value: string }>(sql`
-      SELECT
-        stage,
-        COUNT(*)::text AS count,
-        COALESCE(SUM(value), 0)::text AS total_value
+      SELECT stage, COUNT(*)::text AS count, COALESCE(SUM(value), 0)::text AS total_value
       FROM deals
       GROUP BY stage
       ORDER BY count DESC
     `);
-    const dealRows = dealResult.rows;
 
-    const dealTotalsResult = await db.execute<{ total_deals: string; total_pipeline: string; won_value: string }>(sql`
+    const dealTotalsResult = await db.execute<{
+      total_deals: string; active_deals: string; closed_deals: string;
+      total_pipeline: string; won_value: string;
+    }>(sql`
       SELECT
         COUNT(*)::text AS total_deals,
+        COUNT(*) FILTER (WHERE stage NOT IN ('won','lost'))::text AS active_deals,
+        COUNT(*) FILTER (WHERE stage = 'won')::text AS closed_deals,
         COALESCE(SUM(value), 0)::text AS total_pipeline,
         COALESCE(SUM(value) FILTER (WHERE stage = 'won'), 0)::text AS won_value
       FROM deals
     `);
     const dealTotals = dealTotalsResult.rows[0];
 
-    // --- Message activity (last 30 days by day) ---
-    const msgResult = await db.execute<{ day: string; count: string }>(sql`
+    // --- Properties count ---
+    const propResult = await db.execute<{ total: string; active: string }>(sql`
       SELECT
-        TO_CHAR(DATE_TRUNC('day', m.created_at), 'Mon DD') AS day,
-        COUNT(*)::text AS count
+        COUNT(*)::text AS total,
+        COUNT(*) FILTER (WHERE status = 'active')::text AS active
+      FROM properties
+    `);
+    const propTotals = propResult.rows[0];
+
+    // --- Team members count ---
+    const teamResult = await db.execute<{ total: string }>(sql`
+      SELECT COUNT(*)::text AS total FROM team_members
+    `);
+    const teamTotals = teamResult.rows[0];
+
+    // --- Upcoming appointments (next 7 days) ---
+    const now = new Date();
+    const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const upcomingApptCountResult = await db.execute<{ count: string }>(sql`
+      SELECT COUNT(*)::text AS count
+      FROM appointments
+      WHERE user_id = ${userId}
+        AND date_time >= NOW()
+        AND date_time <= ${in7Days.toISOString()}
+    `);
+    const upcomingAppointmentsCount = parseInt(upcomingApptCountResult.rows[0]?.count ?? "0", 10);
+
+    // --- Recent leads (last 5) ---
+    const recentLeadsResult = await db.execute<{
+      id: string; name: string; source: string; status: string; created_at: string; score: string;
+    }>(sql`
+      SELECT id::text, name, COALESCE(source, 'Unknown') AS source, status,
+             created_at::text, COALESCE(score, 0)::text AS score
+      FROM leads
+      ORDER BY created_at DESC
+      LIMIT 5
+    `);
+
+    // --- Recent deals (last 5 updated) ---
+    const recentDealsResult = await db.execute<{
+      id: string; title: string; stage: string; value: string; updated_at: string; lead_name: string;
+    }>(sql`
+      SELECT d.id::text, d.title, d.stage,
+             COALESCE(d.value, '0') AS value,
+             d.updated_at::text,
+             COALESCE(d.lead_name, '') AS lead_name
+      FROM deals d
+      ORDER BY d.updated_at DESC
+      LIMIT 5
+    `);
+
+    // --- Upcoming appointments (next 5, for current user) ---
+    const upcomingApptResult = await db.execute<{
+      id: string; title: string; date_time: string; location: string; lead_name: string;
+    }>(sql`
+      SELECT a.id::text, a.title, a.date_time::text,
+             COALESCE(a.location, '') AS location,
+             COALESCE(l.name, '') AS lead_name
+      FROM appointments a
+      LEFT JOIN leads l ON a.lead_id = l.id
+      WHERE a.user_id = ${userId} AND a.date_time >= NOW()
+      ORDER BY a.date_time ASC
+      LIMIT 5
+    `);
+
+    // --- Weekly activity (last 7 days: leads + deals created per day) ---
+    const weeklyActivityResult = await db.execute<{
+      day: string; day_label: string; leads: string; deals: string;
+    }>(sql`
+      WITH days AS (
+        SELECT generate_series(
+          DATE_TRUNC('day', NOW() - INTERVAL '6 days'),
+          DATE_TRUNC('day', NOW()),
+          '1 day'::interval
+        )::date AS day
+      ),
+      lead_counts AS (
+        SELECT DATE_TRUNC('day', created_at)::date AS day, COUNT(*)::int AS cnt
+        FROM leads
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY 1
+      ),
+      deal_counts AS (
+        SELECT DATE_TRUNC('day', created_at)::date AS day, COUNT(*)::int AS cnt
+        FROM deals
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY 1
+      )
+      SELECT
+        d.day::text AS day,
+        TO_CHAR(d.day, 'Dy') AS day_label,
+        COALESCE(l.cnt, 0)::text AS leads,
+        COALESCE(dl.cnt, 0)::text AS deals
+      FROM days d
+      LEFT JOIN lead_counts l ON l.day = d.day
+      LEFT JOIN deal_counts dl ON dl.day = d.day
+      ORDER BY d.day ASC
+    `);
+
+    // --- Message activity (last 30 days) ---
+    const msgResult = await db.execute<{ day: string; count: string }>(sql`
+      SELECT TO_CHAR(DATE_TRUNC('day', m.created_at), 'Mon DD') AS day, COUNT(*)::text AS count
       FROM messages m
       WHERE m.created_at >= NOW() - INTERVAL '30 days'
       GROUP BY DATE_TRUNC('day', m.created_at)
       ORDER BY DATE_TRUNC('day', m.created_at) ASC
     `);
-    const msgRows = msgResult.rows;
 
     // --- Monthly conversion trend (last 6 months) ---
     const monthlyResult = await db.execute<{ month: string; total: string; won: string }>(sql`
@@ -94,25 +187,14 @@ router.get("/analytics/overview", requireAuth, async (_req, res) => {
       GROUP BY DATE_TRUNC('month', created_at)
       ORDER BY DATE_TRUNC('month', created_at) ASC
     `);
-    const monthlyRows = monthlyResult.rows;
 
-    // --- Status breakdown ---
+    // --- Status & priority breakdown ---
     const statusResult = await db.execute<{ status: string; count: string }>(sql`
-      SELECT status, COUNT(*)::text AS count
-      FROM leads
-      GROUP BY status
-      ORDER BY count DESC
+      SELECT status, COUNT(*)::text AS count FROM leads GROUP BY status ORDER BY count DESC
     `);
-    const statusRows = statusResult.rows;
-
-    // --- Priority breakdown ---
     const priorityResult = await db.execute<{ priority: string; count: string }>(sql`
-      SELECT priority, COUNT(*)::text AS count
-      FROM leads
-      GROUP BY priority
-      ORDER BY count DESC
+      SELECT priority, COUNT(*)::text AS count FROM leads GROUP BY priority ORDER BY count DESC
     `);
-    const priorityRows = priorityResult.rows;
 
     // --- Activity counts ---
     const activityResult = await db.execute<{ total: string; this_week: string }>(sql`
@@ -121,12 +203,7 @@ router.get("/analytics/overview", requireAuth, async (_req, res) => {
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::text AS this_week
       FROM activities
     `);
-    const activityTotals = activityResult.rows[0];
-
-    const msgTotalResult = await db.execute<{ total: string }>(sql`
-      SELECT COUNT(*)::text AS total FROM messages
-    `);
-    const totalMessages = msgTotalResult.rows[0];
+    const msgTotalResult = await db.execute<{ total: string }>(sql`SELECT COUNT(*)::text AS total FROM messages`);
 
     res.json({
       kpis: {
@@ -134,52 +211,82 @@ router.get("/analytics/overview", requireAuth, async (_req, res) => {
         wonLeads,
         conversionRate,
         totalDeals: parseInt(dealTotals?.total_deals ?? "0", 10),
+        activeDeals: parseInt(dealTotals?.active_deals ?? "0", 10),
+        closedDeals: parseInt(dealTotals?.closed_deals ?? "0", 10),
         totalPipeline: parseFloat(dealTotals?.total_pipeline ?? "0"),
         wonRevenue: parseFloat(dealTotals?.won_value ?? "0"),
-        totalActivities: parseInt(activityTotals?.total ?? "0", 10),
-        activitiesThisWeek: parseInt(activityTotals?.this_week ?? "0", 10),
-        totalMessages: parseInt(totalMessages?.total ?? "0", 10),
+        totalProperties: parseInt(propTotals?.total ?? "0", 10),
+        activeProperties: parseInt(propTotals?.active ?? "0", 10),
+        teamMembers: parseInt(teamTotals?.total ?? "0", 10),
+        upcomingAppointments: upcomingAppointmentsCount,
+        totalActivities: parseInt(activityResult.rows[0]?.total ?? "0", 10),
+        activitiesThisWeek: parseInt(activityResult.rows[0]?.this_week ?? "0", 10),
+        totalMessages: parseInt(msgTotalResult.rows[0]?.total ?? "0", 10),
       },
-      sourceBreakdown: sourceRows.map((r) => ({
+      sourceBreakdown: sourceResult.rows.map((r) => ({
         source: r.source,
         count: parseInt(r.count, 10),
       })),
-      agentPerformance: agentRows.map((r, i) => ({
+      agentPerformance: agentResult.rows.map((r, i) => ({
         agent: r.agent,
         leads: parseInt(r.leads, 10),
         won: parseInt(r.won, 10),
-        winRate:
-          parseInt(r.leads, 10) > 0
-            ? Math.round((parseInt(r.won, 10) / parseInt(r.leads, 10)) * 100)
-            : 0,
+        winRate: parseInt(r.leads, 10) > 0
+          ? Math.round((parseInt(r.won, 10) / parseInt(r.leads, 10)) * 100) : 0,
         avgScore: parseInt(r.avg_score ?? "0", 10),
         rank: i + 1,
       })),
-      dealsByStage: dealRows.map((r) => ({
+      dealsByStage: dealResult.rows.map((r) => ({
         stage: r.stage,
         count: parseInt(r.count, 10),
         value: parseFloat(r.total_value),
       })),
-      messageActivity: msgRows.map((r) => ({
+      messageActivity: msgResult.rows.map((r) => ({
         day: r.day,
         count: parseInt(r.count, 10),
       })),
-      conversionTrend: monthlyRows.map((r) => ({
+      conversionTrend: monthlyResult.rows.map((r) => ({
         month: r.month,
         total: parseInt(r.total, 10),
         won: parseInt(r.won, 10),
-        rate:
-          parseInt(r.total, 10) > 0
-            ? Math.round((parseInt(r.won, 10) / parseInt(r.total, 10)) * 100)
-            : 0,
+        rate: parseInt(r.total, 10) > 0
+          ? Math.round((parseInt(r.won, 10) / parseInt(r.total, 10)) * 100) : 0,
       })),
-      statusBreakdown: statusRows.map((r) => ({
+      statusBreakdown: statusResult.rows.map((r) => ({
         status: r.status,
         count: parseInt(r.count, 10),
       })),
-      priorityBreakdown: priorityRows.map((r) => ({
+      priorityBreakdown: priorityResult.rows.map((r) => ({
         priority: r.priority,
         count: parseInt(r.count, 10),
+      })),
+      weeklyActivity: weeklyActivityResult.rows.map((r) => ({
+        day: r.day_label,
+        leads: parseInt(r.leads, 10),
+        deals: parseInt(r.deals, 10),
+      })),
+      recentLeads: recentLeadsResult.rows.map((r) => ({
+        id: parseInt(r.id, 10),
+        name: r.name,
+        source: r.source,
+        status: r.status,
+        createdAt: r.created_at,
+        score: parseInt(r.score, 10),
+      })),
+      recentDeals: recentDealsResult.rows.map((r) => ({
+        id: parseInt(r.id, 10),
+        title: r.title,
+        stage: r.stage,
+        value: parseFloat(r.value),
+        updatedAt: r.updated_at,
+        leadName: r.lead_name,
+      })),
+      upcomingAppointmentsList: upcomingApptResult.rows.map((r) => ({
+        id: parseInt(r.id, 10),
+        title: r.title,
+        dateTime: r.date_time,
+        location: r.location,
+        leadName: r.lead_name,
       })),
     });
   } catch (err) {
