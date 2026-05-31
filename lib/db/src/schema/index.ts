@@ -11,3 +11,4 @@ export * from "./automation_logs";
 export * from "./connected_accounts";
 export * from "./team_members";
 export * from "./documents";
+export * from "./appointments";
