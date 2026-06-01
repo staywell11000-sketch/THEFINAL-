@@ -32,11 +32,11 @@ export function DashboardPreview() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-balance">
               A Dashboard That
               <span className="text-primary"> Feels </span>
-              As Luxurious As Your Properties
+              Built for Your Properties
             </h2>
             <p className="mt-4 text-lg text-muted-foreground text-pretty">
               Experience a beautifully crafted interface with glassmorphism design, smooth
-              animations, and intuitive workflows that make managing your luxury real estate business
+              animations, and intuitive workflows that make managing your real estate business
               a pleasure.
             </p>
 
@@ -94,7 +94,7 @@ export function DashboardPreview() {
                 </div>
                 <div className="flex-1 mx-4">
                   <div className="h-6 bg-muted/50 rounded-md flex items-center px-3 text-xs text-muted-foreground">
-                    luxestate.app/dashboard
+                    realcrm.app/dashboard
                   </div>
                 </div>
               </div>

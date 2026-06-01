@@ -44,7 +44,7 @@ export function Footer() {
                 Ready to Transform Your Business?
               </h3>
               <p className="text-muted-foreground max-w-md">
-                Join thousands of luxury real estate professionals already using LuxeState.
+                Join thousands of real estate professionals already using RealCRM.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -75,16 +75,16 @@ export function Footer() {
                 <span className="text-primary-foreground font-bold text-lg">L</span>
               </div>
               <span className="text-xl font-semibold tracking-tight">
-                Luxe<span className="text-primary">State</span>
+                Real<span className="text-primary">CRM</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-              The premium CRM solution for luxury real estate professionals who demand excellence.
+              The complete CRM solution for real estate professionals who demand excellence.
             </p>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>hello@luxestate.app</span>
+                <span>hello@realcrm.app</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
@@ -121,7 +121,7 @@ export function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} LuxeState. All rights reserved.
+              &copy; {new Date().getFullYear()} RealCRM. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               {["Twitter", "LinkedIn", "Instagram", "YouTube"].map((social) => (

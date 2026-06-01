@@ -268,7 +268,7 @@ export function PropertyFormModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <DialogHeader className="flex flex-row items-center justify-between border-b border-border/40 px-6 py-4">
           <div>
@@ -309,7 +309,7 @@ export function PropertyFormModal({
         </div>
 
         {/* Step content */}
-        <div className="max-h-[500px] overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
@@ -360,7 +360,7 @@ export function PropertyFormModal({
                     {errors.price && <p className="text-[10px] text-destructive">{errors.price}</p>}
                   </Field>
                   <Field label="Assigned Agent">
-                    <Select value={form.agent} onChange={set("agent")} options={AGENTS.map((a) => ({ value: a, label: a }))} />
+                    <Select value={form.agent} onChange={set("agent")} options={[{ value: "", label: "— Not Assigned —" }, ...AGENTS.map((a) => ({ value: a, label: a }))]} />
                   </Field>
                   <Field label="Description" className="sm:col-span-2">
                     <textarea
@@ -466,8 +466,19 @@ export function PropertyFormModal({
                     <TextInput value={form.ownerEmail} onChange={set("ownerEmail")} placeholder="owner@example.com" type="email" />
                   </Field>
                   <div className="sm:col-span-2 rounded-xl border border-border/30 bg-secondary/10 p-4">
-                    <p className="text-xs font-medium mb-3">Assigned Agent</p>
+                    <p className="text-xs font-medium mb-3">Assigned Agent <span className="text-muted-foreground font-normal">(optional)</span></p>
                     <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        onClick={() => set("agent")("")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs transition-all",
+                          !form.agent ? "border-primary/40 bg-primary/5 font-medium" : "border-border/40 hover:bg-secondary/20"
+                        )}
+                      >
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary/60 text-[10px] font-bold text-muted-foreground">—</div>
+                        Not Assigned
+                        {!form.agent && <Check className="ml-auto h-3 w-3 text-primary" />}
+                      </button>
                       {AGENTS.map((a) => (
                         <button
                           key={a}

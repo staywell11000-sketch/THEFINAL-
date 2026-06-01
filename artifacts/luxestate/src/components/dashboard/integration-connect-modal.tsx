@@ -407,7 +407,7 @@ function OverviewStep({ cfg }: { cfg: PlatformConfig }) {
       <div className="flex items-start gap-2 rounded-lg border border-border/30 bg-secondary/10 p-3">
         <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary/60" />
         <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Your ad account credentials are never stored. LuxeState uses secure OAuth to read-only access your leads. You can disconnect at any time.
+          Your ad account credentials are never stored. We use secure OAuth for read-only access to your leads. You can disconnect at any time.
         </p>
       </div>
     </div>

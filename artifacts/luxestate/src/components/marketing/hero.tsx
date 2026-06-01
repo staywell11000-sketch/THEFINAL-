@@ -27,7 +27,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8"
           >
             <Sparkles className="w-4 h-4" />
-            <span>The #1 CRM for Luxury Real Estate</span>
+            <span>The #1 CRM for Real Estate Professionals</span>
           </motion.div>
 
           <motion.h1
@@ -55,7 +55,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto text-pretty"
           >
-            Streamline your luxury real estate business with intelligent lead tracking,
+            Streamline your real estate business with intelligent lead tracking,
             WhatsApp integration, and beautiful analytics designed for high-end brokers.
           </motion.p>
 

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { useCurrentUser } from "@/lib/user-api"
+import { useSettings } from "@/lib/settings-api"
 import { useLocation as useWouterLocation } from "wouter"
 
 const navItems = [
@@ -51,6 +52,10 @@ type SidebarProps = {
 
 export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unreadCount }: SidebarProps) {
   const [location] = useLocation()
+  const { data: settingsData } = useSettings()
+  const businessName = settingsData?.settings?.business_name || "My CRM"
+  const businessLogoUrl = settingsData?.settings?.business_logo_url
+  const brandInitial = businessName.trim()[0]?.toUpperCase() ?? "C"
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return location === "/dashboard"
@@ -75,11 +80,19 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
             >
               <Link href="/dashboard">
                 <div className="flex items-center gap-2 cursor-pointer select-none">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
-                    <span className="text-sm font-bold text-primary-foreground">L</span>
-                  </div>
-                  <span className="text-base font-semibold tracking-tight text-sidebar-foreground">
-                    Luxe<span className="text-primary">State</span>
+                  {businessLogoUrl ? (
+                    <img
+                      src={businessLogoUrl}
+                      alt={businessName}
+                      className="h-8 w-8 rounded-lg object-cover shadow-sm"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
+                      <span className="text-sm font-bold text-primary-foreground">{brandInitial}</span>
+                    </div>
+                  )}
+                  <span className="text-base font-semibold tracking-tight text-sidebar-foreground truncate max-w-[140px]">
+                    {businessName}
                   </span>
                 </div>
               </Link>
@@ -90,9 +103,17 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
         {collapsed && (
           <Link href="/dashboard">
             <div className="flex w-full items-center justify-center cursor-pointer">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
-                <span className="text-sm font-bold text-primary-foreground">L</span>
-              </div>
+              {businessLogoUrl ? (
+                <img
+                  src={businessLogoUrl}
+                  alt={businessName}
+                  className="h-8 w-8 rounded-lg object-cover shadow-sm"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
+                  <span className="text-sm font-bold text-primary-foreground">{brandInitial}</span>
+                </div>
+              )}
             </div>
           </Link>
         )}

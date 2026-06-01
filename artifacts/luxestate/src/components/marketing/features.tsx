@@ -36,7 +36,7 @@ const features = [
     icon: Building2,
     title: "Property Management",
     description:
-      "Showcase luxury properties with stunning galleries, virtual tours, and detailed specifications.",
+      "Showcase properties with stunning galleries, virtual tours, and detailed specifications.",
     gradient: "from-purple-500 to-pink-500",
   },
   {
@@ -105,7 +105,7 @@ export function Features() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-balance">
             Everything You Need to
             <span className="text-primary"> Dominate </span>
-            Luxury Real Estate
+            Real Estate
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
             Powerful tools designed specifically for high-end real estate professionals who demand

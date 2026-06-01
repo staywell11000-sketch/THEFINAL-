@@ -50,7 +50,7 @@ export async function exportAnalyticsPDF(data: AnalyticsData): Promise<void> {
   doc.setTextColor(...LIGHT);
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
-  doc.text("LuxeState CRM", 20, 70);
+  doc.text("Real Estate CRM", 20, 70);
 
   doc.setFontSize(16);
   doc.setTextColor(...GOLD);
@@ -99,7 +99,7 @@ export async function exportAnalyticsPDF(data: AnalyticsData): Promise<void> {
   doc.setFontSize(8);
   doc.setTextColor(60, 58, 68);
   doc.setFont("helvetica", "normal");
-  doc.text("CONFIDENTIAL · LuxeState CRM Analytics · Internal Report", pw / 2, ph - 12, { align: "center" });
+  doc.text("CONFIDENTIAL · CRM Analytics · Internal Report", pw / 2, ph - 12, { align: "center" });
 
   // ── PAGE 2 — LEAD & CONVERSION ANALYTICS ─────────────────────────────────
   doc.addPage();
@@ -388,7 +388,7 @@ export async function exportAnalyticsPDF(data: AnalyticsData): Promise<void> {
     doc.setFontSize(7.5);
     doc.setTextColor(...MID);
     doc.text(
-      `LuxeState CRM Analytics Report · Page ${p} of ${doc.getNumberOfPages()} · ${new Date().toLocaleDateString()}`,
+      `CRM Analytics Report · Page ${p} of ${doc.getNumberOfPages()} · ${new Date().toLocaleDateString()}`,
       pw / 2,
       ph - 8,
       { align: "center" }
@@ -397,5 +397,5 @@ export async function exportAnalyticsPDF(data: AnalyticsData): Promise<void> {
     doc.rect(0, ph - 2, pw, 2, "F");
   }
 
-  doc.save(`LuxeState-Analytics-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`CRM-Analytics-${new Date().toISOString().slice(0, 10)}.pdf`);
 }

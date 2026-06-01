@@ -972,9 +972,10 @@ function ConfigureStep({ config, setConfig, readyCount }: {
 
         {/* Assigned To */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Assign to Agent</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Assign to Agent <span className="normal-case font-normal">(optional)</span></label>
           <div className="relative">
             <select value={config.assignedTo} onChange={(e) => set({ assignedTo: e.target.value })} className={cn(surfaceSelectClass, "h-9 text-sm")}>
+              <option value="">— Not Assigned —</option>
               {agents.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

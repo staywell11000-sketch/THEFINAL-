@@ -141,7 +141,7 @@ export default function LeadsPage() {
     <div className="space-y-5">
       <DashboardPageHeader
         title="Lead Management"
-        description="Track, manage, and convert your luxury real estate prospects."
+        description="Track, manage, and convert your real estate prospects."
       />
 
       <motion.div

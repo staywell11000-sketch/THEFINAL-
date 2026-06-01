@@ -28,7 +28,7 @@ const ROLES = [
 const EMPLOYEE_COUNTS = ["Just me", "2–5", "6–15", "16–50", "51–200", "200+"]
 
 const TITLES = [
-  "Senior Agent", "Listing Agent", "Buyer's Agent", "Luxury Specialist",
+  "Senior Agent", "Listing Agent", "Buyer's Agent", "Property Specialist",
   "Team Lead", "Broker", "Managing Director", "Associate", "Other",
 ]
 
@@ -105,7 +105,7 @@ function StepBusiness({ form, update }: { form: any; update: (k: string, v: stri
       </div>
       <div className="space-y-1.5">
         <Label>Business / Agency name *</Label>
-        <Input value={form.businessName} onChange={(e) => update("businessName", e.target.value)} placeholder="LuxeState Realty" />
+        <Input value={form.businessName} onChange={(e) => update("businessName", e.target.value)} placeholder="My Real Estate Agency" />
       </div>
       <div className="space-y-1.5">
         <Label>Office address</Label>
@@ -289,7 +289,7 @@ function StepPreferences({ notifs, setNotifs, whatsapp, setWhatsapp }: {
           { key: "newLeads",     label: "New lead assigned",     desc: "Instant alerts when a lead is assigned to you" },
           { key: "dealUpdates",  label: "Deal status changes",   desc: "When deals move through the pipeline" },
           { key: "weeklyReport", label: "Weekly performance",    desc: "Summary of your leads, deals, and activities" },
-          { key: "marketing",    label: "Product updates",       desc: "LuxeState tips and announcements" },
+          { key: "marketing",    label: "Product updates",       desc: "Product tips and announcements" },
         ].map((n) => (
           <div key={n.key}
             className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/10 px-4 py-3"

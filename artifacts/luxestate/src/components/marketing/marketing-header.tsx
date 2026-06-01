@@ -49,7 +49,7 @@ export function MarketingHeader() {
                 </div>
               </div>
               <span className="text-xl font-semibold tracking-tight">
-                Luxe<span className="text-primary">State</span>
+                Real<span className="text-primary">CRM</span>
               </span>
             </Link>
 

@@ -68,7 +68,7 @@ export default function PropertiesPage() {
     <div className="space-y-5">
       <DashboardPageHeader
         title="Property Inventory"
-        description="Manage your luxury property portfolio. Track listings, owners, and performance."
+        description="Manage your property portfolio. Track listings, owners, and performance."
       />
 
       <PropertiesTable

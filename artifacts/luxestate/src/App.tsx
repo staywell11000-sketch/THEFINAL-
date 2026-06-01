@@ -37,7 +37,7 @@ const queryClient = new QueryClient({
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "")
 
 export const THEMES = [
-  { id: "gold",     name: "Luxe Gold",         description: "Warm amber luxury",     swatches: ["#C4943A", "#E8C88A", "#FDF6E8"] },
+  { id: "gold",     name: "Luxe Gold",         description: "Warm amber tones",      swatches: ["#C4943A", "#E8C88A", "#FDF6E8"] },
   { id: "midnight", name: "Midnight",           description: "Dark & sophisticated",  swatches: ["#C4943A", "#2D2B3D", "#141320"] },
   { id: "ocean",    name: "Ocean Blue",         description: "Deep nautical blue",    swatches: ["#1B5FD4", "#4A8FE8", "#EEF3FD"] },
   { id: "emerald",  name: "Emerald Prestige",   description: "Rich emerald green",    swatches: ["#1A8C5C", "#42B47E", "#EEF7F2"] },

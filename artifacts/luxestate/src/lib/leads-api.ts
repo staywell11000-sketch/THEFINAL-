@@ -1,14 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Lead } from "@/components/dashboard/leads-types";
+import { supabase } from "./supabase";
 
-const BASE = "/api";
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api";
 
 export type CreateLeadInput = Omit<Lead, "id">;
 export type UpdateLeadInput = Partial<Omit<Lead, "id">>;
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders },
     ...options,
   });
   if (res.status === 204) return undefined as T;
@@ -112,7 +120,6 @@ export function useSyncLeads() {
         method: "POST",
       }),
     onSuccess: () => {
-      // Refetch leads after a short delay to pick up newly synced leads
       setTimeout(() => {
         qc.invalidateQueries({ queryKey: ["leads"] });
       }, 3000);

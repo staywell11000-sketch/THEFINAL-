@@ -84,13 +84,13 @@ export default function SignInPage() {
             <span className="text-lg font-bold text-primary-foreground">L</span>
           </div>
           <span className="text-2xl font-semibold tracking-tight">
-            Luxe<span className="text-primary">State</span>
+            Real<span className="text-primary">CRM</span>
           </span>
         </div>
 
         <div className="rounded-2xl bg-white p-8 shadow-xl shadow-black/8">
           <h1 className="mb-1 text-2xl font-semibold text-foreground">Welcome back</h1>
-          <p className="mb-6 text-sm text-muted-foreground">Sign in to your LuxeState account</p>
+          <p className="mb-6 text-sm text-muted-foreground">Sign in to your account</p>
 
           <Button
             type="button"
@@ -120,7 +120,7 @@ export default function SignInPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="james@luxeestate.com"
+                placeholder="you@example.com"
                 required
                 autoComplete="email"
               />

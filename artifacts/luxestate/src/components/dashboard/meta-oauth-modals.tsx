@@ -129,7 +129,7 @@ export function MetaPreConnectModal({
           <div className="flex items-start gap-2 rounded-lg border border-border/30 bg-secondary/10 p-3">
             <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary/60" />
             <p className="text-[10px] text-muted-foreground leading-relaxed">
-              You'll be redirected to {platform === "whatsapp" ? "Meta" : platformName} to authorize access. LuxeState uses secure OAuth — your credentials are never stored. You can revoke access at any time.
+              You'll be redirected to {platform === "whatsapp" ? "Meta" : platformName} to authorize access. We use secure OAuth — your credentials are never stored. You can revoke access at any time.
             </p>
           </div>
         </div>

@@ -439,7 +439,7 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FieldRow label="Business Name">
-                    <Input value={business.businessName} onChange={(e) => setBusiness((b) => ({ ...b, businessName: e.target.value }))} placeholder="LuxeState Realty" className={surfaceInputClass} />
+                    <Input value={business.businessName} onChange={(e) => setBusiness((b) => ({ ...b, businessName: e.target.value }))} placeholder="My Real Estate Agency" className={surfaceInputClass} />
                   </FieldRow>
                   <FieldRow label="Your Position">
                     <Input value={business.position} onChange={(e) => setBusiness((b) => ({ ...b, position: e.target.value }))} placeholder="Managing Director" className={surfaceInputClass} />
@@ -470,7 +470,7 @@ export default function SettingsPage() {
 
             {/* ─── Appearance ───────────────────────────── */}
             {activeTab === "appearance" && (
-              <Section title="Appearance" subtitle="Customize how LuxeState looks and behaves.">
+              <Section title="Appearance" subtitle="Customize how your CRM looks and behaves.">
                 {/* Theme */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-3 block">Color Theme</label>
@@ -573,7 +573,7 @@ export default function SettingsPage() {
                   />
                   <NotifRow
                     label="Marketing Emails"
-                    description="LuxeState product updates, tips, and announcements"
+                    description="Product updates, tips, and announcements"
                     checked={notifs.marketingEmailsEnabled}
                     onChange={(v) => handleNotifToggle("marketingEmailsEnabled", v)}
                     saving={savingNotif}

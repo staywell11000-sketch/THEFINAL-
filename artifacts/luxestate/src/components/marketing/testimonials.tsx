@@ -4,10 +4,10 @@ import { Star, Quote } from "lucide-react"
 const testimonials = [
   {
     name: "Victoria Sterling",
-    role: "Luxury Real Estate Broker",
+    role: "Real Estate Broker",
     location: "Beverly Hills, CA",
     content:
-      "LuxeState transformed how I manage my high-net-worth clients. The WhatsApp integration alone has increased my response rate by 300%. My clients appreciate the premium experience.",
+      "This CRM transformed how I manage my high-net-worth clients. The WhatsApp integration alone has increased my response rate by 300%. My clients appreciate the premium experience.",
     rating: 5,
   },
   {
@@ -23,7 +23,7 @@ const testimonials = [
     role: "Senior Property Consultant",
     location: "Monte Carlo, Monaco",
     content:
-      "The multi-language support has been game-changing for our international clientele. We've closed 40% more deals since switching to LuxeState.",
+      "The multi-language support has been game-changing for our international clientele. We've closed 40% more deals since switching to this CRM.",
     rating: 5,
   },
   {
@@ -39,7 +39,7 @@ const testimonials = [
     role: "Principal Agent",
     location: "London, UK",
     content:
-      "My team's productivity has doubled. The property showcase feature helps us present listings in a way that matches the luxury experience our clients expect.",
+      "My team's productivity has doubled. The property showcase feature helps us present listings in a way that matches the experience our clients expect.",
     rating: 5,
   },
   {
@@ -47,7 +47,7 @@ const testimonials = [
     role: "Director of Sales",
     location: "Nice, France",
     content:
-      "We've tried every CRM on the market. LuxeState is the only one built specifically for luxury real estate. The difference in quality is immediately apparent.",
+      "We've tried every CRM on the market. This is the only one built specifically for real estate. The difference in quality is immediately apparent.",
     rating: 5,
   },
 ]
@@ -74,8 +74,8 @@ export function Testimonials() {
             Real Estate Professionals
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
-            Join thousands of luxury real estate professionals who have transformed their business
-            with LuxeState.
+            Join thousands of real estate professionals who have transformed their business
+            with our CRM.
           </p>
         </motion.div>
 

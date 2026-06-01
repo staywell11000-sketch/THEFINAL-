@@ -128,12 +128,12 @@ export default function SignUpPage() {
             <span className="text-lg font-bold text-primary-foreground">L</span>
           </div>
           <span className="text-2xl font-semibold tracking-tight">
-            Luxe<span className="text-primary">State</span>
+            Real<span className="text-primary">CRM</span>
           </span>
         </div>
 
         <div className="rounded-2xl bg-white p-8 shadow-xl shadow-black/8">
-          <h1 className="mb-1 text-2xl font-semibold text-foreground">Join LuxeState</h1>
+          <h1 className="mb-1 text-2xl font-semibold text-foreground">Create your account</h1>
           <p className="mb-6 text-sm text-muted-foreground">Create your account to get started</p>
 
           <Button
