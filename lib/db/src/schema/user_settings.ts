@@ -22,7 +22,7 @@ export const userSettings = pgTable(
     officeAddress: text("office_address"),
     teamSize: varchar("team_size", { length: 50 }),
     position: varchar("position", { length: 100 }),
-    theme: varchar("theme", { length: 20 }).default("system"),
+    theme: varchar("theme", { length: 20 }).default("gold"),
     timeFormat: varchar("time_format", { length: 5 }).default("12h"),
     notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
     newLeadNotif: boolean("new_lead_notif").notNull().default(true),

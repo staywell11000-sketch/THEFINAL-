@@ -28,13 +28,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const email = user.email ?? "";
 
     await db.execute(sql`
-      INSERT INTO users (id, email, first_name, last_name, role, created_at, updated_at)
+      INSERT INTO users (id, email, first_name, last_name, role, onboarded, created_at, updated_at)
       VALUES (
         ${user.id},
         ${email},
         ${firstName || null},
         ${lastName},
         'agent',
+        false,
         NOW(),
         NOW()
       )

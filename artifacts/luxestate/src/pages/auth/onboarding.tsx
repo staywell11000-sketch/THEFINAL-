@@ -538,8 +538,9 @@ export default function OnboardingPage() {
       await new Promise((r) => setTimeout(r, 2800))
 
       // Invalidate the cached user profile so OnboardingGuard sees onboarded=true
+      // Must use exact:false (default) so ["currentUser", userId] is also cleared
       await queryClient.invalidateQueries({ queryKey: ["currentUser"] })
-      await queryClient.refetchQueries({ queryKey: ["currentUser"] })
+      await queryClient.refetchQueries({ queryKey: ["currentUser"], exact: false })
 
       setLocation("/dashboard")
     } catch (err: any) {

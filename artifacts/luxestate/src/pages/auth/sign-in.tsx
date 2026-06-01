@@ -58,6 +58,8 @@ export default function SignInPage() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
+        // OnboardingGuard on /dashboard will detect new users (no DB record)
+        // and redirect them to /onboarding automatically
       },
     })
     if (error) {
