@@ -36,11 +36,12 @@ app.use(
 
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json({
+  limit: "15mb",
   verify: (req: any, _res: Response, buf: Buffer) => {
     req.rawBody = buf;
   },
 }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 app.use("/api", router);
 

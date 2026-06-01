@@ -3,6 +3,7 @@ import { db, leadsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { fireTrigger } from "../services/automationEngine";
+import { createNotification } from "../services/notificationService";
 
 const router: IRouter = Router();
 
@@ -73,14 +74,25 @@ router.post("/leads", requireAuth, async (req, res) => {
     const [row] = await db.insert(leadsTable).values(body).returning();
     const saved = sanitize(row);
     res.status(201).json(saved);
-    // Fire automation trigger after responding
+    const userId = (req as any).userId;
+    // Fire automation trigger + notification after responding
     fireTrigger({
       triggerType: "lead_created",
       leadId: row.id,
       lead: row,
-      userId: req.body.createdById ?? undefined,
+      userId: userId ?? undefined,
       newStatus: row.status,
     }).catch(() => {});
+    if (userId) {
+      createNotification({
+        userId,
+        type: "lead",
+        title: `New lead added — ${row.name}`,
+        body: row.source ? `Source: ${row.source}` : "A new lead has been created.",
+        actionUrl: `/dashboard/leads/${row.id}`,
+        metadata: { leadId: row.id },
+      }).catch(() => {});
+    }
   } catch (err) {
     console.error("Create lead error:", err);
     res.status(500).json({ error: "Failed to create lead" });

@@ -182,7 +182,7 @@ export default function SettingsPage() {
     firstName: "", lastName: "", email: "", phone: "", title: "", avatarUrl: "",
   })
   const [business, setBusiness] = useState({
-    businessName: "", businessLogoUrl: "", whatsappNumber: "", position: "",
+    businessName: "", businessLogoUrl: "", whatsappNumber: "", officeAddress: "", teamSize: "", position: "",
   })
   const [notifs, setNotifs] = useState({
     notificationsEnabled: true, newLeadNotif: true, dealStatusNotif: true,
@@ -191,8 +191,9 @@ export default function SettingsPage() {
   const [security, setSecurity] = useState({ securityTwoFactorEnabled: false })
   const [timeFormat, setTimeFormat] = useState<"12h" | "24h">("12h")
   const [savingNotif, setSavingNotif] = useState(false)
+  const themeApplied = useRef(false)
 
-  // Populate form from fetched data
+  // Populate form from fetched data (runs once on first load)
   useEffect(() => {
     if (user) {
       setProfile({
@@ -209,6 +210,8 @@ export default function SettingsPage() {
         businessName:    settings.business_name ?? "",
         businessLogoUrl: settings.business_logo_url ?? "",
         whatsappNumber:  settings.whatsapp_number ?? "",
+        officeAddress:   settings.office_address ?? "",
+        teamSize:        settings.team_size ?? "",
         position:        settings.position ?? "",
       })
       setNotifs({
@@ -221,7 +224,11 @@ export default function SettingsPage() {
       })
       setSecurity({ securityTwoFactorEnabled: settings.security_two_factor_enabled })
       setTimeFormat((settings.time_format as "12h" | "24h") ?? "12h")
-      if (settings.theme) setTheme(settings.theme)
+      // Only apply theme from DB on first load to avoid accidental overrides
+      if (settings.theme && !themeApplied.current) {
+        setTheme(settings.theme)
+        themeApplied.current = true
+      }
     }
   }, [user, settings])
 
@@ -248,6 +255,8 @@ export default function SettingsPage() {
         businessName:    business.businessName    || undefined,
         businessLogoUrl: business.businessLogoUrl || undefined,
         whatsappNumber:  business.whatsappNumber  || undefined,
+        officeAddress:   business.officeAddress   || undefined,
+        teamSize:        business.teamSize        || undefined,
         position:        business.position        || undefined,
       })
       toast.success("Business info saved")
@@ -331,27 +340,28 @@ export default function SettingsPage() {
         description="Manage your profile, preferences, and integrations."
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start">
         {/* ── Sidebar ─────────────────────────────────────── */}
         <motion.nav
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:w-52 lg:shrink-0 lg:pb-0 lg:sticky lg:top-4"
+          className="flex flex-row gap-1 overflow-x-auto pb-2 shrink-0 md:flex-col md:w-48 md:overflow-visible md:pb-0 md:sticky md:top-4"
         >
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-3 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-all",
+                "flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all shrink-0",
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                   : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
               )}
             >
               <tab.icon className="h-4 w-4 shrink-0" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden text-xs">{tab.label.split(" ")[0]}</span>
             </button>
           ))}
         </motion.nav>
@@ -437,19 +447,27 @@ export default function SettingsPage() {
                   <FieldRow label="Your Position">
                     <Input value={business.position} onChange={(e) => setBusiness((b) => ({ ...b, position: e.target.value }))} placeholder="Managing Director" className={surfaceInputClass} />
                   </FieldRow>
-                  <FieldRow label="WhatsApp Number">
+                  <FieldRow label="Business Phone / WhatsApp">
                     <Input value={business.whatsappNumber} onChange={(e) => setBusiness((b) => ({ ...b, whatsappNumber: e.target.value }))} placeholder="+1 (555) 000-0000" className={surfaceInputClass} />
+                  </FieldRow>
+                  <FieldRow label="Team Size">
+                    <Input value={business.teamSize} onChange={(e) => setBusiness((b) => ({ ...b, teamSize: e.target.value }))} placeholder="e.g. 2–5" className={surfaceInputClass} />
+                  </FieldRow>
+                  <FieldRow label="Office Address">
+                    <Input value={business.officeAddress} onChange={(e) => setBusiness((b) => ({ ...b, officeAddress: e.target.value }))} placeholder="123 Main St, Beverly Hills, CA" className={cn(surfaceInputClass, "sm:col-span-2")} />
                   </FieldRow>
                 </div>
 
-                <Button
-                  onClick={saveBusiness}
-                  disabled={updateSettings.isPending}
-                  className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 gap-2"
-                >
-                  {updateSettings.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Changes
-                </Button>
+                <div className="pt-1">
+                  <Button
+                    onClick={saveBusiness}
+                    disabled={updateSettings.isPending}
+                    className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 gap-2"
+                  >
+                    {updateSettings.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Changes
+                  </Button>
+                </div>
               </Section>
             )}
 

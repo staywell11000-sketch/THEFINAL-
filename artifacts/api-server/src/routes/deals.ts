@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, deals, leadsTable } from "@workspace/db";
 import { eq, sql, and, inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
+import { createNotification } from "../services/notificationService";
 
 const router: IRouter = Router();
 
@@ -147,6 +148,10 @@ router.patch("/deals/:id", requireAuth, async (req, res) => {
       updateData.closedAt = new Date();
     }
 
+    const prevRows = await db.select({ stage: deals.stage, createdById: deals.createdById })
+      .from(deals).where(eq(deals.id, id)).limit(1);
+    const prevStage = prevRows[0]?.stage;
+
     const [row] = await db
       .update(deals)
       .set(updateData)
@@ -155,6 +160,24 @@ router.patch("/deals/:id", requireAuth, async (req, res) => {
 
     if (!row) return void res.status(404).json({ error: "Deal not found" });
     res.json(sanitizeDeal(row));
+
+    // Fire notification when stage changes
+    const ownerId = (req as any).userId ?? prevRows[0]?.createdById;
+    if (ownerId && body.stage && body.stage !== prevStage) {
+      const stageLabel: Record<string, string> = {
+        new: "New", qualified: "Qualified", proposal: "Proposal",
+        negotiation: "Negotiation", "due_diligence": "Due Diligence",
+        won: "Won", lost: "Lost",
+      };
+      createNotification({
+        userId: ownerId,
+        type: "deal",
+        title: `Deal stage updated — ${row.title}`,
+        body: `Moved from ${stageLabel[prevStage ?? ""] ?? prevStage} → ${stageLabel[body.stage] ?? body.stage}`,
+        actionUrl: `/dashboard/deals`,
+        metadata: { dealId: id, fromStage: prevStage, toStage: body.stage },
+      }).catch(() => {});
+    }
   } catch (err) {
     console.error("Deal update error:", err);
     res.status(500).json({ error: "Failed to update deal" });

@@ -42,7 +42,7 @@ router.put("/settings", requireAuth, async (req: any, res) => {
     // User profile fields
     firstName, lastName, phone, title, avatarUrl,
     // Settings fields
-    businessName, businessLogoUrl, whatsappNumber, position,
+    businessName, businessLogoUrl, whatsappNumber, officeAddress, teamSize, position,
     theme, timeFormat,
     notificationsEnabled, newLeadNotif, dealStatusNotif, whatsappNotif,
     weeklyReportsEnabled, marketingEmailsEnabled, securityTwoFactorEnabled,
@@ -62,7 +62,7 @@ router.put("/settings", requireAuth, async (req: any, res) => {
 
     await db.execute(sql`
       INSERT INTO user_settings (
-        user_id, business_name, business_logo_url, whatsapp_number, position,
+        user_id, business_name, business_logo_url, whatsapp_number, office_address, team_size, position,
         theme, time_format,
         notifications_enabled, new_lead_notif, deal_status_notif, whatsapp_notif,
         weekly_reports_enabled, marketing_emails_enabled, security_two_factor_enabled,
@@ -72,8 +72,10 @@ router.put("/settings", requireAuth, async (req: any, res) => {
         ${businessName    ?? null},
         ${businessLogoUrl ?? null},
         ${whatsappNumber  ?? null},
+        ${officeAddress   ?? null},
+        ${teamSize        ?? null},
         ${position        ?? null},
-        ${theme           ?? "system"},
+        ${theme           ?? "gold"},
         ${timeFormat      ?? "12h"},
         ${notificationsEnabled       ?? true},
         ${newLeadNotif               ?? true},
@@ -88,6 +90,8 @@ router.put("/settings", requireAuth, async (req: any, res) => {
         business_name              = COALESCE(EXCLUDED.business_name,              user_settings.business_name),
         business_logo_url          = COALESCE(EXCLUDED.business_logo_url,          user_settings.business_logo_url),
         whatsapp_number            = COALESCE(EXCLUDED.whatsapp_number,            user_settings.whatsapp_number),
+        office_address             = COALESCE(EXCLUDED.office_address,             user_settings.office_address),
+        team_size                  = COALESCE(EXCLUDED.team_size,                  user_settings.team_size),
         position                   = COALESCE(EXCLUDED.position,                   user_settings.position),
         theme                      = EXCLUDED.theme,
         time_format                = EXCLUDED.time_format,
@@ -113,19 +117,9 @@ router.put("/settings", requireAuth, async (req: any, res) => {
 // Uploads to Supabase Storage → returns { url }
 router.post(
   "/settings/upload",
-  (req, res, next) => {
-    // Allow up to 5 MB for image uploads
-    let rawBody = "";
-    req.setEncoding("utf8");
-    req.on("data", (chunk) => { rawBody += chunk; });
-    req.on("end", () => {
-      try { (req as any).rawBody = JSON.parse(rawBody); next(); }
-      catch { res.status(400).json({ error: "Invalid JSON" }); }
-    });
-  },
   requireAuth,
   async (req: any, res) => {
-    const { field, base64, filename } = req.rawBody ?? {};
+    const { field, base64, filename } = req.body ?? {};
     if (!field || !base64) return res.status(400).json({ error: "Missing field or base64" });
 
     const base64Data = base64.replace(/^data:[^;]+;base64,/, "");

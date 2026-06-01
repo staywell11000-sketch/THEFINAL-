@@ -19,6 +19,8 @@ export const userSettings = pgTable(
     businessName: text("business_name"),
     businessLogoUrl: text("business_logo_url"),
     whatsappNumber: varchar("whatsapp_number", { length: 50 }),
+    officeAddress: text("office_address"),
+    teamSize: varchar("team_size", { length: 50 }),
     position: varchar("position", { length: 100 }),
     theme: varchar("theme", { length: 20 }).default("system"),
     timeFormat: varchar("time_format", { length: 5 }).default("12h"),

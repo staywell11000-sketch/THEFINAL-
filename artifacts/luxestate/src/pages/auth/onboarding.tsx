@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useLocation } from "wouter"
+import { useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -418,6 +419,7 @@ export default function OnboardingPage() {
   const { user, loading } = useAuth()
   const [, setLocation] = useLocation()
   const { setTheme } = useTheme()
+  const queryClient = useQueryClient()
 
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -515,6 +517,8 @@ export default function OnboardingPage() {
           businessName:          form.businessName || null,
           businessLogoUrl:       logoUrl || null,
           whatsappNumber:        form.businessPhone || null,
+          officeAddress:         form.address || null,
+          teamSize:              form.employees || null,
           position:              form.title || null,
           theme:                 selectedTheme,
           notificationsEnabled:  notifs.newLeads || notifs.dealUpdates,
@@ -526,8 +530,13 @@ export default function OnboardingPage() {
         }),
       })
 
-      // Let loading screen play for a moment then redirect
+      // Let loading screen play for a moment
       await new Promise((r) => setTimeout(r, 2800))
+
+      // Invalidate the cached user profile so OnboardingGuard sees onboarded=true
+      await queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+      await queryClient.refetchQueries({ queryKey: ["currentUser"] })
+
       setLocation("/dashboard")
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong. Please try again.")

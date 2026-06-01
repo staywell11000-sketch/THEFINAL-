@@ -20,6 +20,8 @@ export type UserSettingsData = {
   business_name: string | null
   business_logo_url: string | null
   whatsapp_number: string | null
+  office_address: string | null
+  team_size: string | null
   position: string | null
   theme: string | null
   time_format: string | null
@@ -46,6 +48,8 @@ export type SettingsUpdate = {
   businessName?: string
   businessLogoUrl?: string
   whatsappNumber?: string
+  officeAddress?: string
+  teamSize?: string
   position?: string
   theme?: string
   timeFormat?: string

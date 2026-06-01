@@ -111,10 +111,11 @@ router.get("/analytics/overview", requireAuth, async (req, res) => {
       id: string; title: string; stage: string; value: string; updated_at: string; lead_name: string;
     }>(sql`
       SELECT d.id::text, d.title, d.stage,
-             COALESCE(d.value, '0') AS value,
+             COALESCE(d.value::text, '0') AS value,
              d.updated_at::text,
-             COALESCE(d.lead_name, '') AS lead_name
+             COALESCE(l2.name, '') AS lead_name
       FROM deals d
+      LEFT JOIN leads l2 ON d.lead_id = l2.id
       ORDER BY d.updated_at DESC
       LIMIT 5
     `);

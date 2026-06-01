@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useLocation } from "wouter"
 import { Link } from "wouter"
 import { Sidebar } from "@/components/dashboard/sidebar"
@@ -9,58 +9,13 @@ import { Bell, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 import { useCurrentUser } from "@/lib/user-api"
-
-const SEED_NOTIFICATIONS: Notification[] = [
-  {
-    id: 1, type: "lead", read: false, group: "today",
-    title: "Hot lead detected — Sarah Mitchell",
-    description: "AI urgency score jumped to 94. Immediate follow-up recommended before 6 PM.",
-    time: "2 minutes ago",
-    avatar: "SM",
-  },
-  {
-    id: 2, type: "message", read: false, group: "today",
-    title: "3 unread messages",
-    description: "Emily Rodriguez, Michael Chen, and David Park sent new WhatsApp messages.",
-    time: "14 minutes ago",
-  },
-  {
-    id: 3, type: "reminder", read: false, group: "today",
-    title: "Reminder: Follow up with Michael Chen",
-    description: "Proposal sent 48 hours ago with no reply. Send updated Beverly Hills comps.",
-    time: "1 hour ago",
-  },
-  {
-    id: 4, type: "deal", read: false, group: "today",
-    title: "Deal updated — Manhattan Penthouse",
-    description: "Sarah Mitchell's deal moved to Due Diligence stage. HOA docs still pending.",
-    time: "2 hours ago",
-  },
-  {
-    id: 5, type: "reminder", read: false, group: "today",
-    title: "Viewing scheduled for tomorrow",
-    description: "Beverly Hills Estate tour with Michael Chen at 2:00 PM.",
-    time: "3 hours ago",
-  },
-  {
-    id: 6, type: "team", read: true, group: "today",
-    title: "Emily Rodriguez closed her first deal",
-    description: "Congratulations! Emily closed a $3.1M deal. Total Q2 revenue now $57.4M.",
-    time: "5 hours ago",
-  },
-  {
-    id: 7, type: "lead", read: true, group: "earlier",
-    title: "New lead assigned — Lisa Thornton",
-    description: "Referred by Amanda Foster. Interested in Beverly Hills properties, budget $4–6M.",
-    time: "Yesterday, 4:30 PM",
-  },
-  {
-    id: 8, type: "deal", read: true, group: "earlier",
-    title: "Deal closed — Malibu Beach House",
-    description: "Amanda Foster's $16M deal successfully closed. Commission of $480K earned.",
-    time: "Yesterday, 2:15 PM",
-  },
-]
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllRead,
+  useDismissNotification,
+  type ApiNotification,
+} from "@/lib/notifications-api"
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard":              "Overview",
@@ -82,6 +37,36 @@ function getPageTitle(location: string): string {
   if (PAGE_TITLES[location]) return PAGE_TITLES[location]
   if (location.startsWith("/dashboard/leads/")) return "Lead Profile"
   return "Dashboard"
+}
+
+function toUiNotification(n: ApiNotification, now: Date): Notification {
+  const created = new Date(n.createdAt)
+  const diffMs = now.getTime() - created.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  const diffHr = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHr / 24)
+
+  let time: string
+  if (diffMin < 1) time = "Just now"
+  else if (diffMin < 60) time = `${diffMin} minute${diffMin !== 1 ? "s" : ""} ago`
+  else if (diffHr < 24) time = `${diffHr} hour${diffHr !== 1 ? "s" : ""} ago`
+  else time = `${diffDay} day${diffDay !== 1 ? "s" : ""} ago`
+
+  const isToday = diffHr < 24
+
+  const allowedTypes = ["lead", "message", "reminder", "deal", "property", "team", "system"] as const
+  type AllowedType = typeof allowedTypes[number]
+  const type: AllowedType = allowedTypes.includes(n.type as AllowedType) ? (n.type as AllowedType) : "system"
+
+  return {
+    id: n.id,
+    type,
+    title: n.title,
+    description: n.body ?? "",
+    time,
+    read: n.read,
+    group: isToday ? "today" : "earlier",
+  }
 }
 
 function GlobalHeader({
@@ -164,15 +149,24 @@ function GlobalHeader({
 type DashboardLayoutProps = { children: ReactNode }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [collapsed, setCollapsed]     = useState(false)
-  const [notifOpen, setNotifOpen]     = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>(SEED_NOTIFICATIONS)
+  const [collapsed, setCollapsed]   = useState(false)
+  const [notifOpen, setNotifOpen]   = useState(false)
+  const nowRef = useRef(new Date())
 
+  const { data: apiNotifs = [] }    = useNotifications()
+  const markRead                    = useMarkNotificationRead()
+  const markAllRead                 = useMarkAllRead()
+  const dismiss                     = useDismissNotification()
+
+  // Refresh "now" each render so relative timestamps stay accurate
+  useEffect(() => { nowRef.current = new Date() })
+
+  const notifications: Notification[] = apiNotifs.map((n) => toUiNotification(n, nowRef.current))
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const handleMarkRead    = (id: number) => setNotifications((p) => p.map((n) => n.id === id ? { ...n, read: true } : n))
-  const handleMarkAllRead = ()           => setNotifications((p) => p.map((n) => ({ ...n, read: true })))
-  const handleDismiss     = (id: number) => setNotifications((p) => p.filter((n) => n.id !== id))
+  const handleMarkRead    = (id: number) => markRead.mutate(id)
+  const handleMarkAllRead = ()           => markAllRead.mutate()
+  const handleDismiss     = (id: number) => dismiss.mutate(id)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

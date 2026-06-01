@@ -16,6 +16,7 @@ import teamMembersRouter from "./teamMembers";
 import documentsRouter from "./documents";
 import appointmentsRouter from "./appointments";
 import settingsRouter from "./settings";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(teamMembersRouter);
 router.use(documentsRouter);
 router.use(appointmentsRouter);
 router.use(settingsRouter);
+router.use(notificationsRouter);
 
 export default router;
