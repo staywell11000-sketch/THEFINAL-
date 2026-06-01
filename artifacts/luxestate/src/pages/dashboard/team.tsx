@@ -308,7 +308,7 @@ function MemberDetailPanel({ memberId, onClose, onEdit }: DetailPanelProps) {
                 </Button>
               </div>
               {member.assignedLeads.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">No leads assigned yet.</p>
+                <p className="text-sm text-muted-foreground">No leads assigned yet.</p>
               ) : (
                 <div className="space-y-2">
                   {member.assignedLeads.map((lead) => (

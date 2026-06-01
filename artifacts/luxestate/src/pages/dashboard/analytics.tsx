@@ -131,19 +131,20 @@ export default function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading analytics from your data…</p>
+      <div className="flex flex-col items-center justify-center gap-3 py-16">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading analytics…</p>
       </div>
     )
   }
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-24">
-        <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm text-muted-foreground">Failed to load analytics</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
+      <div className="flex flex-col items-center justify-center gap-3 py-16">
+        <AlertCircle className="h-7 w-7 text-destructive" />
+        <p className="text-sm font-medium text-foreground">Failed to load analytics</p>
+        <p className="text-xs text-muted-foreground">Please check your connection and try again.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-1 gap-2">
           <RefreshCw className="h-4 w-4" /> Retry
         </Button>
       </div>

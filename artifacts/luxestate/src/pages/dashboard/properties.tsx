@@ -65,7 +65,7 @@ export default function PropertiesPage() {
   const isMutating = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <DashboardPageHeader
         title="Property Inventory"
         description="Manage your property portfolio. Track listings, owners, and performance."

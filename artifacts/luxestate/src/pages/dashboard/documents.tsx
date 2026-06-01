@@ -511,16 +511,16 @@ export default function DocumentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border/50">
-                  <th className="w-8 px-2 py-3" />
-                  <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Document</th>
-                  <th className="hidden px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground md:table-cell">Category</th>
-                  <th className="hidden px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:table-cell">Linked to</th>
-                  <th className="hidden px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground xl:table-cell">Size</th>
-                  <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
+                <tr className="border-y border-border/50 bg-secondary/30">
+                  <th className="w-8 px-3 py-3" />
+                  <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Document</th>
+                  <th className="hidden px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground md:table-cell">Category</th>
+                  <th className="hidden px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:table-cell">Linked to</th>
+                  <th className="hidden px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground xl:table-cell">Size</th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/30">
+              <tbody className="divide-y divide-border/20">
                 <AnimatePresence>
                   {filtered.map((doc, i) => {
                     const cfg = catConfig(doc.category)
@@ -538,7 +538,7 @@ export default function DocumentsPage() {
                         )}
                       >
                         {/* Checkbox */}
-                        <td className="px-2 py-3">
+                        <td className="px-3 py-3.5">
                           <input
                             type="checkbox"
                             checked={selected}
@@ -548,25 +548,25 @@ export default function DocumentsPage() {
                         </td>
 
                         {/* Name + date */}
-                        <td className="px-2 py-3">
+                        <td className="px-3 py-3.5">
                           <div className="flex items-center gap-3">
                             <FileTypeIcon mime={doc.fileType} />
                             <div className="min-w-0">
-                              <p className="max-w-[200px] truncate font-medium text-foreground">{doc.title}</p>
+                              <p className="max-w-[220px] truncate font-medium text-foreground">{doc.title}</p>
                               <p className="text-xs text-muted-foreground">{fmtDate(doc.createdAt)}</p>
                             </div>
                           </div>
                         </td>
 
                         {/* Category */}
-                        <td className="hidden px-2 py-3 md:table-cell">
+                        <td className="hidden px-3 py-3.5 md:table-cell">
                           <Badge variant="outline" className={cn("text-xs", cfg.color)}>
                             {cfg.label}
                           </Badge>
                         </td>
 
                         {/* Linked */}
-                        <td className="hidden px-2 py-3 lg:table-cell">
+                        <td className="hidden px-3 py-3.5 lg:table-cell">
                           <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                             {doc.leadId && (
                               <span className="flex items-center gap-1">
@@ -583,12 +583,12 @@ export default function DocumentsPage() {
                         </td>
 
                         {/* Size */}
-                        <td className="hidden px-2 py-3 text-xs text-muted-foreground xl:table-cell">
+                        <td className="hidden px-3 py-3.5 text-xs text-muted-foreground xl:table-cell">
                           {formatFileSize(doc.fileSize)}
                         </td>
 
                         {/* Actions */}
-                        <td className="px-2 py-3 text-right">
+                        <td className="px-3 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost" size="icon"

@@ -710,7 +710,9 @@ function SectionHeader({
 function Empty({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center gap-2 py-8 text-center">
-      <Circle className="h-8 w-8 text-border" />
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/60">
+        <Circle className="h-4 w-4 text-muted-foreground/50" />
+      </div>
       <p className="text-sm text-muted-foreground">{label}</p>
     </div>
   )

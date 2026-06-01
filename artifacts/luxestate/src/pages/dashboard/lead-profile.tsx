@@ -252,10 +252,11 @@ export default function LeadProfilePage({ params }: { params: { id: string } }) 
 
   if (!lead) {
     return (
-      <div className="flex flex-col items-center gap-4 py-20 text-center">
-        <p className="text-xl font-bold text-foreground">Lead not found</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <p className="text-lg font-semibold text-foreground">Lead not found</p>
+        <p className="text-sm text-muted-foreground">This lead may have been removed or the link is invalid.</p>
         <Link href="/dashboard/leads">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="mt-1 gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back to Leads
           </Button>

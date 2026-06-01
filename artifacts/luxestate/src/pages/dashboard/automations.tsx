@@ -669,8 +669,8 @@ export default function AutomationsPage() {
               </div>
 
               {isLoading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">

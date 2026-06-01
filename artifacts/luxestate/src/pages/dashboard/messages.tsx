@@ -499,7 +499,7 @@ export default function MessagesPage() {
             <div className="flex-1 overflow-y-auto">
               {convLoading ? (
                 <div className="flex h-32 items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               ) : filteredConvs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">

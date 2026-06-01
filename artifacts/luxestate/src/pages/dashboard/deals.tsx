@@ -610,8 +610,8 @@ export default function DealsPage() {
 
       {/* Deal list */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </div>
       ) : error ? (
         <div className="glass-card flex flex-col items-center gap-3 py-16 text-center">

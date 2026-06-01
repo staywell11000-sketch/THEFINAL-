@@ -546,9 +546,9 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <DashboardPageHeader title="Settings" description="Manage your account preferences." />
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <DashboardPageHeader title="Settings" description="Manage your profile, preferences, and integrations." />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </div>
       </div>
     )
@@ -557,7 +557,7 @@ export default function SettingsPage() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <DashboardPageHeader title="Settings" description="Manage your account preferences." />
+        <DashboardPageHeader title="Settings" description="Manage your profile, preferences, and integrations." />
         <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500 flex items-center gap-3">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Failed to load settings.

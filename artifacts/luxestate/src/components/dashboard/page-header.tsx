@@ -18,7 +18,7 @@ export function DashboardPageHeader({ title, description, actions, delay = 0 }: 
     >
       <div>
         <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-        <p className="text-muted-foreground">{description}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
       </div>
       {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
     </motion.div>

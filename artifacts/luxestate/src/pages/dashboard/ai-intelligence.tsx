@@ -587,7 +587,7 @@ export default function AIIntelligencePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="glass-card p-4 flex items-center gap-3"
+              className="glass-card p-5 flex items-center gap-3"
             >
               <div className={cn("rounded-xl p-2.5 bg-secondary/50")}>
                 <stat.icon className={cn("h-5 w-5", stat.color)} />
