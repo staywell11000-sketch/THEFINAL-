@@ -219,7 +219,7 @@ function GlobalHeader({
 }) {
   const [location] = useLocation()
   const { user } = useAuth()
-  const { data: profile } = useCurrentUser()
+  const { data: profile } = useCurrentUser(user?.id)
   const [searchOpen, setSearchOpen] = useState(false)
   const title = getPageTitle(location)
 

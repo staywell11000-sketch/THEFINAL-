@@ -4,3 +4,5 @@
 - [Settings theme override bug](settings-theme.md) — never call setTheme() in a useEffect that watches settings data; next-themes owns the theme via localStorage; only call setTheme() on explicit user clicks.
 - [Leads schema user isolation](leads-isolation.md) — leads table had no created_by_id column (added June 2026); GET routes use OR created_by_id IS NULL to preserve legacy data; analytics raw SQL must match.
 - [Data isolation pattern](data-isolation.md) — leads/deals/analytics filter by userId; use OR col IS NULL for nullable FK columns to handle pre-isolation data; properties uses listed_by_id, deals uses created_by_id.
+- [useCurrentUser session guard](use-current-user.md) — useCurrentUser takes userId param and enabled:!!userId; callers get userId from useAuth().session/user. useNotifications also needs enabled:!!session. HMR hooks-order errors after adding useAuth inside a hook are dev-only noise, resolve on page reload.
+- [THEMES export HMR fix](themes-hmr.md) — non-component exports in App.tsx break Vite HMR (THEMES constant caused full reloads). Moved to lib/themes.ts; all component files import from there.

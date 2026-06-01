@@ -15,7 +15,7 @@ import {
   Link2, Camera, Upload, Loader2,
   Check, Lock, Clock, Mail, Phone, Save, RefreshCw, AlertCircle,
 } from "lucide-react"
-import { THEMES } from "@/App"
+import { THEMES } from "@/lib/themes"
 
 // ─── Tab Config ───────────────────────────────────────────
 

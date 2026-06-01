@@ -17,7 +17,7 @@ export type UserProfile = {
   updatedAt: string
 }
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
+export async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) return {}
   return { Authorization: `Bearer ${session.access_token}` }
@@ -25,6 +25,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 async function fetchCurrentUser(): Promise<UserProfile> {
   const headers = await getAuthHeaders()
+  if (!headers.Authorization) throw new Error("No session")
   const res = await fetch(`${BASE}/api/users/me`, { headers })
   if (!res.ok) throw new Error("Not found")
   return res.json()
@@ -41,11 +42,12 @@ async function upsertCurrentUser(data: Partial<UserProfile>): Promise<UserProfil
   return res.json()
 }
 
-export function useCurrentUser() {
+export function useCurrentUser(userId?: string) {
   return useQuery<UserProfile>({
-    queryKey: ["currentUser"],
+    queryKey: ["currentUser", userId],
     queryFn: fetchCurrentUser,
     retry: false,
+    enabled: !!userId,
   })
 }
 
@@ -54,7 +56,8 @@ export function useUpdateCurrentUser() {
   return useMutation({
     mutationFn: upsertCurrentUser,
     onSuccess: (data) => {
-      qc.setQueryData(["currentUser"], data)
+      qc.setQueryData(["currentUser", data.id], data)
+      qc.invalidateQueries({ queryKey: ["currentUser"] })
     },
   })
 }

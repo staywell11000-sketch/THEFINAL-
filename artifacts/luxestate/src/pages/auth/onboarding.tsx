@@ -13,7 +13,7 @@ import {
   ArrowRight, ArrowLeft, Check, Loader2, Camera,
   Building2, User, Bell, Wifi, CheckCircle2,
 } from "lucide-react"
-import { THEMES } from "@/App"
+import { THEMES } from "@/lib/themes"
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "")
 

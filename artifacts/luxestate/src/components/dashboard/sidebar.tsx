@@ -192,7 +192,7 @@ function SidebarUserSection({
   collapsed: boolean; notifOpen: boolean; onToggleNotif: () => void; unreadCount: number
 }) {
   const { user, signOut } = useAuth()
-  const { data: profile } = useCurrentUser()
+  const { data: profile } = useCurrentUser(user?.id)
   const [, setLocation] = useWouterLocation()
 
   const handleSignOut = async () => {

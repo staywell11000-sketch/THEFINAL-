@@ -1,26 +1,32 @@
 import { Router, type IRouter } from "express";
 import { db, activities, leadsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/activities", requireAuth, async (req, res) => {
+router.get("/activities", requireAuth, async (req: any, res) => {
+  const userId: string = req.userId;
   try {
     const leadId = req.query.leadId ? parseInt(req.query.leadId as string, 10) : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
 
-    let query = db.select().from(activities).orderBy(desc(activities.createdAt)).limit(limit);
     if (leadId && !isNaN(leadId)) {
       const rows = await db
         .select()
         .from(activities)
-        .where(eq(activities.leadId, leadId))
+        .where(and(eq(activities.leadId, leadId), eq(activities.userId, userId)))
         .orderBy(desc(activities.createdAt))
         .limit(limit);
       return void res.json(rows);
     }
-    const rows = await query;
+
+    const rows = await db
+      .select()
+      .from(activities)
+      .where(eq(activities.userId, userId))
+      .orderBy(desc(activities.createdAt))
+      .limit(limit);
     res.json(rows);
   } catch (err) {
     console.error("Fetch activities error:", err);
@@ -28,11 +34,15 @@ router.get("/activities", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/activities/:id", requireAuth, async (req, res) => {
+router.get("/activities/:id", requireAuth, async (req: any, res) => {
   const id = parseInt(req.params.id, 10);
+  const userId: string = req.userId;
   if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
   try {
-    const [row] = await db.select().from(activities).where(eq(activities.id, id));
+    const [row] = await db
+      .select()
+      .from(activities)
+      .where(and(eq(activities.id, id), eq(activities.userId, userId)));
     if (!row) return void res.status(404).json({ error: "Activity not found" });
     res.json(row);
   } catch {
@@ -40,11 +50,12 @@ router.get("/activities/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/activities", requireAuth, async (req, res) => {
+router.post("/activities", requireAuth, async (req: any, res) => {
+  const userId: string = req.userId;
   try {
-    const { userId, leadId, dealId, propertyId, type, title, description, outcome, duration, metadata, scheduledAt, completedAt } = req.body;
-    if (!userId || !type || !title) {
-      return void res.status(400).json({ error: "userId, type, and title are required" });
+    const { leadId, dealId, propertyId, type, title, description, outcome, duration, metadata, scheduledAt, completedAt } = req.body;
+    if (!type || !title) {
+      return void res.status(400).json({ error: "type and title are required" });
     }
     const [row] = await db
       .insert(activities)
@@ -70,15 +81,16 @@ router.post("/activities", requireAuth, async (req, res) => {
   }
 });
 
-router.patch("/activities/:id", requireAuth, async (req, res) => {
+router.put("/activities/:id", requireAuth, async (req: any, res) => {
   const id = parseInt(req.params.id, 10);
+  const userId: string = req.userId;
   if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
   try {
-    const { id: _id, createdAt: _c, ...body } = req.body;
+    const { id: _id, userId: _uid, createdAt: _c, ...body } = req.body;
     const [row] = await db
       .update(activities)
       .set({ ...body, updatedAt: new Date() })
-      .where(eq(activities.id, id))
+      .where(and(eq(activities.id, id), eq(activities.userId, userId)))
       .returning();
     if (!row) return void res.status(404).json({ error: "Activity not found" });
     res.json(row);
@@ -87,11 +99,16 @@ router.patch("/activities/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/activities/:id", requireAuth, async (req, res) => {
+router.delete("/activities/:id", requireAuth, async (req: any, res) => {
   const id = parseInt(req.params.id, 10);
+  const userId: string = req.userId;
   if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
   try {
-    await db.delete(activities).where(eq(activities.id, id));
+    const deleted = await db
+      .delete(activities)
+      .where(and(eq(activities.id, id), eq(activities.userId, userId)))
+      .returning();
+    if (!deleted.length) return void res.status(404).json({ error: "Activity not found" });
     res.status(204).send();
   } catch {
     res.status(500).json({ error: "Failed to delete activity" });
