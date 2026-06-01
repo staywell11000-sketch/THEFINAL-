@@ -124,9 +124,10 @@ export default function AIIntelligencePage() {
   const runAnalyzeAll = async () => {
     setProgress({ processed: 0, total: 0, current: "Starting…" })
     try {
-      const session = (window as unknown as { __authSession?: { access_token: string } }).__authSession
+      const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token ?? ""
-      const res = await fetch("/api/ai/analyze-all", {
+      const BASE = import.meta.env.BASE_URL.replace(/\/$/, "")
+      const res = await fetch(`${BASE}/api/ai/analyze-all`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       })

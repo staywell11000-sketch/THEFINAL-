@@ -83,9 +83,9 @@ router.get("/analytics/overview", requireAuth, async (req, res) => {
     `);
     const propTotals = propResult.rows[0];
 
-    // --- Team members count ---
+    // --- Team members count (scoped to this user) ---
     const teamResult = await db.execute<{ total: string }>(sql`
-      SELECT COUNT(*)::text AS total FROM team_members
+      SELECT COUNT(*)::text AS total FROM team_members WHERE user_id = ${userId}
     `);
     const teamTotals = teamResult.rows[0];
 
@@ -212,14 +212,21 @@ router.get("/analytics/overview", requireAuth, async (req, res) => {
       GROUP BY priority ORDER BY count DESC
     `);
 
-    // --- Activity counts ---
+    // --- Activity counts (scoped to this user) ---
     const activityResult = await db.execute<{ total: string; this_week: string }>(sql`
       SELECT
         COUNT(*)::text AS total,
         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::text AS this_week
       FROM activities
+      WHERE user_id = ${userId}
     `);
-    const msgTotalResult = await db.execute<{ total: string }>(sql`SELECT COUNT(*)::text AS total FROM messages`);
+    // Message count scoped through the user's own conversations
+    const msgTotalResult = await db.execute<{ total: string }>(sql`
+      SELECT COUNT(m.*)::text AS total
+      FROM messages m
+      INNER JOIN conversations c ON c.id = m.conversation_id
+      WHERE c.user_id = ${userId}::uuid
+    `);
 
     res.json({
       kpis: {

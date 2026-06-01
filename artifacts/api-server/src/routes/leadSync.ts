@@ -33,13 +33,15 @@ router.post("/lead-sync/trigger", requireAuth, async (_req, res) => {
  * POST /api/lead-sync/trigger/:accountId
  * Trigger sync for a specific connected account. Waits for completion.
  */
-router.post("/lead-sync/trigger/:accountId", requireAuth, async (req, res) => {
+router.post("/lead-sync/trigger/:accountId", requireAuth, async (req: any, res) => {
   const { accountId } = req.params
+  const userId: string = req.userId
   try {
     const { data: account, error } = await supabaseAdmin
       .from("connected_accounts")
       .select("id, user_id, provider, access_token, metadata")
       .eq("id", accountId)
+      .eq("user_id", userId)
       .in("provider", ["facebook", "instagram"])
       .eq("status", "active")
       .single()

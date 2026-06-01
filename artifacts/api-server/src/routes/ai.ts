@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, leadsTable, activities, deals, messages, conversations } from "@workspace/db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and, or, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { openai } from "../lib/openai";
 
@@ -74,12 +74,21 @@ Return ONLY a valid JSON object with these exact fields:
   return parsed;
 }
 
+// Ownership predicate reused across routes
+const ownsLead = (userId: string) =>
+  or(eq(leadsTable.createdById, userId), isNull(leadsTable.createdById));
+
 router.post("/ai/analyze-lead/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id, 10);
+  const userId = (req as any).userId as string;
   if (isNaN(id)) return void res.status(400).json({ error: "Invalid ID" });
 
   try {
-    const [lead] = await db.select().from(leadsTable).where(eq(leadsTable.id, id));
+    // Scope lead fetch to the authenticated user
+    const [lead] = await db
+      .select()
+      .from(leadsTable)
+      .where(and(eq(leadsTable.id, id), ownsLead(userId)));
     if (!lead) return void res.status(404).json({ error: "Lead not found" });
 
     const leadActivities = await db
@@ -96,9 +105,11 @@ router.post("/ai/analyze-lead/:id", requireAuth, async (req, res) => {
       .orderBy(desc(deals.createdAt))
       .limit(1);
 
+    // Scope conversations to this specific lead
     const leadConversations = await db
       .select()
       .from(conversations)
+      .where(eq(conversations.leadId, id))
       .limit(5);
 
     let recentMessages: string[] = [];
@@ -110,7 +121,8 @@ router.post("/ai/analyze-lead/:id", requireAuth, async (req, res) => {
         .where(inArray(messages.conversationId, convIds))
         .orderBy(desc(messages.createdAt))
         .limit(5);
-      recentMessages = msgs.map((m) => `[${m.senderType}]: ${m.content}`);
+      // Use `direction` field (outbound/inbound), not the non-existent `senderType`
+      recentMessages = msgs.map((m) => `[${(m.direction ?? "unknown").toUpperCase()}]: ${m.content}`);
     }
 
     const recentActivities = leadActivities.map(
@@ -123,6 +135,7 @@ router.post("/ai/analyze-lead/:id", requireAuth, async (req, res) => {
 
     const analysis = await analyzeLeadWithAI({ lead, recentMessages, recentActivities, dealInfo });
 
+    // Scope update to the owner as well
     const [updated] = await db
       .update(leadsTable)
       .set({
@@ -132,7 +145,7 @@ router.post("/ai/analyze-lead/:id", requireAuth, async (req, res) => {
         suggestedActions: analysis.suggestedActions,
         updatedAt: new Date(),
       })
-      .where(eq(leadsTable.id, id))
+      .where(and(eq(leadsTable.id, id), ownsLead(userId)))
       .returning();
 
     res.json({ ...analysis, lead: updated });
@@ -143,14 +156,17 @@ router.post("/ai/analyze-lead/:id", requireAuth, async (req, res) => {
 });
 
 router.post("/ai/analyze-all", requireAuth, async (req, res) => {
+  const userId = (req as any).userId as string;
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
   try {
+    // Only analyze leads belonging to the authenticated user
     const allLeads = await db
       .select()
       .from(leadsTable)
+      .where(ownsLead(userId))
       .orderBy(desc(leadsTable.updatedAt))
       .limit(20);
 
@@ -186,6 +202,7 @@ router.post("/ai/analyze-all", requireAuth, async (req, res) => {
           dealInfo,
         });
 
+        // Scope update to owner
         await db
           .update(leadsTable)
           .set({
@@ -195,7 +212,7 @@ router.post("/ai/analyze-all", requireAuth, async (req, res) => {
             suggestedActions: analysis.suggestedActions,
             updatedAt: new Date(),
           })
-          .where(eq(leadsTable.id, lead.id));
+          .where(and(eq(leadsTable.id, lead.id), ownsLead(userId)));
 
         res.write(
           `data: ${JSON.stringify({
@@ -227,22 +244,27 @@ router.post("/ai/analyze-all", requireAuth, async (req, res) => {
 });
 
 router.post("/ai/sales-insights", requireAuth, async (req, res) => {
+  const userId = (req as any).userId as string;
   try {
+    // Scope all queries to the authenticated user's data
     const allLeads = await db
       .select()
       .from(leadsTable)
+      .where(ownsLead(userId))
       .orderBy(desc(leadsTable.updatedAt))
       .limit(50);
 
     const allDeals = await db
       .select()
       .from(deals)
+      .where(or(eq(deals.createdById, userId), isNull(deals.createdById)))
       .orderBy(desc(deals.createdAt))
       .limit(20);
 
     const recentActivities = await db
       .select()
       .from(activities)
+      .where(eq(activities.userId, userId))
       .orderBy(desc(activities.createdAt))
       .limit(30);
 
@@ -313,10 +335,15 @@ Return ONLY a valid JSON object:
 
 router.post("/ai/conversation-summary/:leadId", requireAuth, async (req, res) => {
   const leadId = parseInt(req.params.leadId as string, 10);
+  const userId = (req as any).userId as string;
   if (isNaN(leadId)) return void res.status(400).json({ error: "Invalid lead ID" });
 
   try {
-    const [lead] = await db.select().from(leadsTable).where(eq(leadsTable.id, leadId));
+    // Scope lead fetch to the authenticated user
+    const [lead] = await db
+      .select()
+      .from(leadsTable)
+      .where(and(eq(leadsTable.id, leadId), ownsLead(userId)));
     if (!lead) return void res.status(404).json({ error: "Lead not found" });
 
     const leadActivities = await db
@@ -326,18 +353,30 @@ router.post("/ai/conversation-summary/:leadId", requireAuth, async (req, res) =>
       .orderBy(desc(activities.createdAt))
       .limit(10);
 
-    const allMessages = await db
-      .select()
-      .from(messages)
-      .orderBy(desc(messages.createdAt))
-      .limit(20);
+    // Scope messages to conversations belonging to this lead, not globally
+    const leadConversations = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.leadId, leadId))
+      .limit(10);
+
+    const allMessages =
+      leadConversations.length > 0
+        ? await db
+            .select()
+            .from(messages)
+            .where(inArray(messages.conversationId, leadConversations.map((c) => c.id)))
+            .orderBy(desc(messages.createdAt))
+            .limit(20)
+        : [];
 
     const activityLog = leadActivities.map(
       (act) => `[${act.type.toUpperCase()}] ${act.title}${act.description ? `: ${act.description}` : ""}${act.outcome ? ` | Outcome: ${act.outcome}` : ""} (${new Date(act.createdAt).toLocaleDateString()})`
     );
 
+    // Use `direction` field (inbound/outbound) instead of non-existent `senderType`
     const msgLog = allMessages.map(
-      (msg) => `[${msg.senderType.toUpperCase()}]: ${msg.content} (${new Date(msg.createdAt).toLocaleDateString()})`
+      (msg) => `[${(msg.direction ?? "unknown").toUpperCase()}]: ${msg.content} (${new Date(msg.createdAt).toLocaleDateString()})`
     );
 
     const prompt = `You are an AI CRM analyst for luxury real estate. Summarize all communications and activities for this lead.

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, automations, automationLogs } from "@workspace/db";
-import { eq, desc, and, or, isNull } from "drizzle-orm";
+import { eq, desc, and, or, isNull, inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { fireTrigger } from "../services/automationEngine";
 
@@ -199,9 +199,11 @@ router.get("/automation-logs", requireAuth, async (req: any, res) => {
         .orderBy(desc(automationLogs.createdAt))
         .limit(limit);
     } else {
+      // No specific automationId — return logs only for this user's automations
       rows = await db
         .select()
         .from(automationLogs)
+        .where(inArray(automationLogs.automationId, userAutomationIds))
         .orderBy(desc(automationLogs.createdAt))
         .limit(limit);
     }

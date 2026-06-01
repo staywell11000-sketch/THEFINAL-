@@ -121,9 +121,15 @@ router.post(
   async (req: any, res) => {
     const { field, base64, filename } = req.body ?? {};
     if (!field || !base64) return res.status(400).json({ error: "Missing field or base64" });
+    if (!["avatar", "logo"].includes(field)) return res.status(400).json({ error: "Invalid field" });
 
     const base64Data = base64.replace(/^data:[^;]+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
+
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (buffer.length > MAX_BYTES) {
+      return res.status(413).json({ error: "Image too large — maximum size is 5 MB" });
+    }
 
     const ext = (filename as string | undefined)?.split(".").pop()?.toLowerCase() ?? "jpg";
     const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
