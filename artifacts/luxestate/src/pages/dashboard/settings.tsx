@@ -48,7 +48,7 @@ function Toggle({
       onClick={() => onChange(!checked)}
       className={cn(
         "relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-        checked ? "bg-primary" : "bg-muted",
+        checked ? "bg-primary" : "bg-input border border-border",
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >
@@ -795,25 +795,21 @@ export default function SettingsPage() {
                     onChange={(v) => handleNotifToggle("dealStatusNotif", v)}
                     saving={savingNotif}
                   />
-                  <NotifRow
-                    label="WhatsApp Messages"
-                    description="Receive in-app WhatsApp message notifications"
-                    checked={notifs.whatsappNotif}
-                    onChange={(v) => handleNotifToggle("whatsappNotif", v)}
-                    saving={savingNotif}
-                  />
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-secondary/10 px-4 py-3.5">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">WhatsApp Messages</p>
+                        <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">Coming Soon</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">WhatsApp messaging notifications will be available once integration is live</p>
+                    </div>
+                    <Toggle checked={false} onChange={() => {}} disabled={true} />
+                  </div>
                   <NotifRow
                     label="Weekly Performance Report"
                     description="A weekly summary of your leads, deals, and activities"
                     checked={notifs.weeklyReportsEnabled}
                     onChange={(v) => handleNotifToggle("weeklyReportsEnabled", v)}
-                    saving={savingNotif}
-                  />
-                  <NotifRow
-                    label="Marketing Emails"
-                    description="Product updates, tips, and announcements"
-                    checked={notifs.marketingEmailsEnabled}
-                    onChange={(v) => handleNotifToggle("marketingEmailsEnabled", v)}
                     saving={savingNotif}
                   />
                 </div>
@@ -1109,8 +1105,6 @@ export default function SettingsPage() {
                     {[
                       { label: "Email Address", value: session?.user?.email ?? "—", mono: false },
                       { label: "Member Since",  value: memberSince, mono: false },
-                      { label: "Account ID",    value: session?.user?.id ? `${session.user.id.slice(0, 8)}…` : "—", mono: true },
-                      { label: "Auth Provider", value: session?.user?.app_metadata?.provider === "email" ? "Email & Password" : (session?.user?.app_metadata?.provider ?? "Email"), mono: false },
                     ].map(({ label, value, mono }) => (
                       <div key={label} className="rounded-xl border border-border/50 bg-secondary/10 px-4 py-3.5">
                         <p className="text-xs text-muted-foreground mb-1">{label}</p>

@@ -1,5 +1,5 @@
 // ── Types ─────────────────────────────────────────────────────────────────
-export type Platform = "facebook" | "instagram" | "tiktok" | "whatsapp" | "website"
+export type Platform = "facebook" | "instagram" | "tiktok" | "whatsapp"
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "syncing" | "error" | "paused"
 
 export type MockAdAccount = {
@@ -159,24 +159,6 @@ export const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
       "Two-way message sync with CRM",
     ],
     connectSteps: ["Enter phone number", "Verify number", "Select Business Profile", "Configure triggers"],
-  },
-  website: {
-    id: "website",
-    name: "Website Forms",
-    category: "Web",
-    tagline: "Sync leads from your website contact and inquiry forms",
-    description: "Connect your website forms to automatically route inquiries into your CRM. Works with any platform — WordPress, Webflow, Squarespace, custom HTML.",
-    brandColor: "#6366F1",
-    gradient: "from-indigo-600 to-violet-500",
-    lightBg: "bg-indigo-500/10",
-    iconBg: "bg-indigo-600",
-    features: [
-      "Universal webhook for any form platform",
-      "Automatic field mapping and detection",
-      "UTM parameter and referral tracking",
-      "Real-time lead creation from submissions",
-    ],
-    connectSteps: ["Select platform", "Configure form URL", "Map fields", "Install webhook"],
   },
 }
 

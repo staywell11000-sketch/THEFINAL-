@@ -267,27 +267,12 @@ function ProviderCard({
             </div>
           </div>
 
-          {/* Redirect URI row — always visible so users know what to register */}
-          <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-secondary/30 px-2.5 py-1.5">
-            <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              Callback URL
-            </span>
-            <code className="min-w-0 flex-1 truncate font-mono text-[10px] text-foreground/70">
-              {getCallbackUrl(meta.id)}
-            </code>
-            <CopyButton text={getCallbackUrl(meta.id)} />
-          </div>
 
           {/* Connected account details */}
           {isConnected && (
             <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               {account.account_name && (
                 <span className="font-medium text-foreground">{account.account_name}</span>
-              )}
-              {account.account_id && (
-                <span className="rounded-md bg-secondary/40 px-1.5 py-0.5 font-mono text-[11px]">
-                  ID: {account.account_id}
-                </span>
               )}
               {account.last_synced_at && (
                 <span className="flex items-center gap-1">
@@ -456,35 +441,6 @@ export function ConnectedAccountsTab({ connectedProvider, errorMessage }: Props)
         </div>
       )}
 
-      {/* Callback URLs summary panel */}
-      <div className="glass-card p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <Info className="h-4 w-4 text-primary" />
-          <h4 className="text-sm font-semibold text-foreground">Developer Portal Setup</h4>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Each platform requires you to whitelist the exact OAuth callback URL shown on each card above.
-          Copy and paste these into your app's "Valid OAuth Redirect URIs" setting:
-        </p>
-        <div className="space-y-1.5">
-          {(["whatsapp", "facebook", "instagram", "tiktok"] as Provider[]).map((p) => {
-            const url = getCallbackUrl(p)
-            return (
-              <div key={p} className="flex items-center gap-2 rounded-lg bg-secondary/30 px-3 py-2">
-                <span className="w-[72px] shrink-0 text-[11px] font-semibold capitalize text-muted-foreground">{p}</span>
-                <code className="min-w-0 flex-1 truncate text-[11px] text-foreground">{url}</code>
-                <CopyButton text={url} />
-              </div>
-            )
-          })}
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          For Meta apps (Facebook, Instagram, WhatsApp): go to{" "}
-          <span className="font-medium text-foreground">Facebook for Developers → Your App → Facebook Login → Settings → Valid OAuth Redirect URIs</span>.
-          For TikTok: go to{" "}
-          <span className="font-medium text-foreground">TikTok Developer Portal → Your App → Redirect URIs</span>.
-        </p>
-      </div>
 
       {/* Disconnect confirmation overlay */}
       <AnimatePresence>

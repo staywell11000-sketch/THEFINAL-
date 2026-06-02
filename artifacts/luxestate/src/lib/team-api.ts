@@ -37,6 +37,7 @@ export type CreateMemberInput = {
   phone?: string;
   role?: TeamRole;
   performanceScore?: number | null;
+  dateOfEmployment?: string | null;
 };
 
 export type UpdateMemberInput = Partial<CreateMemberInput>;

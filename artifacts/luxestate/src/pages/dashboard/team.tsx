@@ -61,6 +61,7 @@ function MemberForm({ initial, onSave, onCancel, saving, title }: MemberFormProp
     phone: initial?.phone ?? "",
     role: initial?.role ?? "agent",
     performanceScore: initial?.performanceScore ?? null,
+    dateOfEmployment: initial?.dateOfEmployment ?? "",
   })
   const set = <K extends keyof CreateMemberInput>(k: K, v: CreateMemberInput[K]) =>
     setForm((p) => ({ ...p, [k]: v }))
@@ -112,15 +113,15 @@ function MemberForm({ initial, onSave, onCancel, saving, title }: MemberFormProp
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           </div>
-          <Input
-            placeholder="Performance score (0–100)"
-            type="number"
-            min={0}
-            max={100}
-            value={form.performanceScore ?? ""}
-            onChange={(e) => set("performanceScore", e.target.value ? parseInt(e.target.value) : null)}
-            className={surfaceInputClass}
-          />
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground pl-0.5">Date of Employment</label>
+            <Input
+              type="date"
+              value={form.dateOfEmployment ?? ""}
+              onChange={(e) => set("dateOfEmployment", e.target.value)}
+              className={surfaceInputClass}
+            />
+          </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel} className="border-border/50">Cancel</Button>

@@ -34,7 +34,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 
 // ── Which platforms use real OAuth ───────────────────────────────────────
 const META_PLATFORMS = new Set<Platform>(["facebook", "instagram", "whatsapp"])
-const ALL_PLATFORMS: Platform[] = ["facebook", "instagram", "tiktok", "whatsapp", "website"]
+const ALL_PLATFORMS: Platform[] = ["facebook", "instagram", "tiktok", "whatsapp"]
 
 // ── Map a real connected account → display Integration ───────────────────
 function realAccountToIntegration(account: ConnectedAccount): Integration {
@@ -77,7 +77,6 @@ const CHART_COLORS: Record<Platform, string> = {
   instagram: "#ec4899",
   tiktok:    "#71717a",
   whatsapp:  "#22c55e",
-  website:   "#6366f1",
 }
 
 // ── Analytics chart data ──────────────────────────────────────────────────
@@ -325,7 +324,7 @@ export default function IntegrationsPage() {
   const { data: realAccounts = [], isLoading: accountsLoading } = useConnectedAccounts()
   const disconnectAccount = useDisconnectAccount()
 
-  // ── Simulated accounts (TikTok, Website only) ─────────────────────────
+  // ── Simulated accounts (TikTok only) ─────────────────────────────────
   const [simulatedIntegrations, setSimulatedIntegrations] = useState<Integration[]>(() =>
     getIntegrations().filter((i) => !META_PLATFORMS.has(i.platform))
   )
@@ -395,7 +394,7 @@ export default function IntegrationsPage() {
     }
   }, [])
 
-  // ── Simulated auto-sync (TikTok + Website only) ───────────────────────
+  // ── Simulated auto-sync (TikTok only) ────────────────────────────────
   const syncTimerRef = useRef<number | null>(null)
 
   const refreshSimulated = useCallback(() => {
@@ -622,7 +621,7 @@ export default function IntegrationsPage() {
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-muted-foreground">More coming soon</p>
-              <p className="text-xs text-muted-foreground/60 mt-0.5">LinkedIn, Zillow, Google Ads</p>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">Google Ads and more</p>
             </div>
           </motion.div>
         </div>
@@ -741,7 +740,7 @@ export default function IntegrationsPage() {
         />
       )}
 
-      {/* Simulated modal for TikTok / Website */}
+      {/* Simulated modal for TikTok */}
       {simulatedModal && !META_PLATFORMS.has(simulatedModal) && (
         <IntegrationConnectModal
           platform={simulatedModal}

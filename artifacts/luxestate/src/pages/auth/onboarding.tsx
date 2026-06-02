@@ -289,7 +289,6 @@ function StepPreferences({ notifs, setNotifs, whatsapp, setWhatsapp }: {
           { key: "newLeads",     label: "New lead assigned",     desc: "Instant alerts when a lead is assigned to you" },
           { key: "dealUpdates",  label: "Deal status changes",   desc: "When deals move through the pipeline" },
           { key: "weeklyReport", label: "Weekly performance",    desc: "Summary of your leads, deals, and activities" },
-          { key: "marketing",    label: "Product updates",       desc: "Product tips and announcements" },
         ].map((n) => (
           <div key={n.key}
             className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-secondary/10 px-4 py-3"
@@ -320,30 +319,6 @@ function StepPreferences({ notifs, setNotifs, whatsapp, setWhatsapp }: {
         ))}
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 mb-1">
-          <Wifi className="h-4 w-4 text-primary" />
-          <p className="text-sm font-semibold text-foreground">WhatsApp Business</p>
-        </div>
-        <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-green-500/20 text-green-600 font-bold text-sm">W</div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Connect WhatsApp Business</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Send automated messages to leads and get real-time message notifications.
-                You can connect from <span className="font-medium text-foreground">Settings → Connected Accounts</span> at any time.
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block" />
-              Setup in Settings after onboarding
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
@@ -442,7 +417,7 @@ export default function OnboardingPage() {
   const [logoPreview, setLogoPreview]     = useState<string | null>(null)
   const [logoFile, setLogoFile]           = useState<File | null>(null)
   const [selectedTheme, setSelectedTheme] = useState("gold")
-  const [notifs, setNotifs] = useState({ newLeads: true, dealUpdates: true, weeklyReport: true, marketing: false })
+  const [notifs, setNotifs] = useState({ newLeads: true, dealUpdates: true, weeklyReport: true })
 
   useEffect(() => {
     if (!loading && !user) setLocation("/sign-in")
@@ -471,8 +446,8 @@ export default function OnboardingPage() {
   }
 
   const canProceed = () => {
-    if (step === 1) return form.firstName.trim() && form.lastName.trim()
-    if (step === 2) return form.businessName.trim()
+    if (step === 1) return form.firstName.trim() && form.lastName.trim() && form.phone.trim() && form.title.trim()
+    if (step === 2) return form.businessName.trim() && form.address.trim() && form.businessPhone.trim() && form.role.trim()
     return true
   }
 
@@ -534,9 +509,8 @@ export default function OnboardingPage() {
           notificationsEnabled:  notifs.newLeads || notifs.dealUpdates,
           newLeadNotif:          notifs.newLeads,
           dealStatusNotif:       notifs.dealUpdates,
-          whatsappNotif:         true,
           weeklyReportsEnabled:  notifs.weeklyReport,
-          marketingEmailsEnabled:notifs.marketing,
+          marketingEmailsEnabled:false,
         }),
       })
 

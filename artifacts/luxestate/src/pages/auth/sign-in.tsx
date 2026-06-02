@@ -54,12 +54,11 @@ export default function SignInPage() {
   const handleGoogle = async () => {
     setGoogleLoading(true)
     setError("")
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "")
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-        // OnboardingGuard on /dashboard will detect new users (no DB record)
-        // and redirect them to /onboarding automatically
+        redirectTo: `${window.location.origin}${base}/dashboard`,
       },
     })
     if (error) {

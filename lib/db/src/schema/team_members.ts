@@ -18,6 +18,7 @@ export const teamMembers = pgTable("team_members", {
   phone: text("phone").default(""),
   role: varchar("role", { length: 50 }).notNull().default("agent"),
   performanceScore: integer("performance_score").default(0),
+  dateOfEmployment: text("date_of_employment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
