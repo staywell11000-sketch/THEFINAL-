@@ -364,12 +364,12 @@ function ResultPanel({ moduleId, result }: { moduleId: string; result: any }) {
 }
 
 // ── Modules Tab ───────────────────────────────────────────────────────────────
-function ModulesTab({ plan, onSwitchTab }: { plan: string; onSwitchTab: (tab: string) => void }) {
+function ModulesTab({ plan, isSuperAdmin, onSwitchTab }: { plan: string; isSuperAdmin: boolean; onSwitchTab: (tab: string) => void }) {
   const [loading, setLoading] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, any>>({})
   const [period, setPeriod] = useState("weekly")
 
-  const isAvailable = (requiredPlan: PlanSlug) => meetsRequirement(plan, requiredPlan)
+  const isAvailable = (requiredPlan: PlanSlug) => isSuperAdmin || meetsRequirement(plan, requiredPlan)
 
   const runAction = async (module: AIModule) => {
     setLoading(module.id)
@@ -467,8 +467,8 @@ function ModulesTab({ plan, onSwitchTab }: { plan: string; onSwitchTab: (tab: st
 }
 
 // ── AI Chat Tab ───────────────────────────────────────────────────────────────
-function AIChatTab({ plan }: { plan: string }) {
-  const isAgency = meetsRequirement(plan, "agency")
+function AIChatTab({ plan, isSuperAdmin }: { plan: string; isSuperAdmin: boolean }) {
+  const isAgency = isSuperAdmin || meetsRequirement(plan, "agency")
   const [messages, setMessages] = useState<ChatMsg[]>([
     { role: "assistant", content: "Hi! I'm your AI CRM assistant with full context of your leads, deals, and pipeline. Ask me anything — who to follow up with, pipeline health, closing strategies, or lead scores.", ts: new Date() }
   ])
@@ -672,7 +672,8 @@ function UsageTab() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AIIntelligencePage() {
   const [tab, setTab] = useState("modules")
-  const { plan } = usePlan()
+  const { plan, isSuperAdmin } = usePlan()
+  const showChatLock = !isSuperAdmin && !meetsRequirement(plan, "agency")
 
   return (
     <div className="space-y-5">
@@ -687,17 +688,17 @@ export default function AIIntelligencePage() {
           </TabsTrigger>
           <TabsTrigger value="chat" className="flex items-center gap-1.5">
             <MessageSquare className="h-3.5 w-3.5" /> Chat
-            {!meetsRequirement(plan, "agency") && <Lock className="h-3 w-3 text-muted-foreground ml-0.5" />}
+            {showChatLock && <Lock className="h-3 w-3 text-muted-foreground ml-0.5" />}
           </TabsTrigger>
           <TabsTrigger value="usage" className="flex items-center gap-1.5">
             <CreditCard className="h-3.5 w-3.5" /> Usage
           </TabsTrigger>
         </TabsList>
         <TabsContent value="modules" className="mt-0">
-          <ModulesTab plan={plan} onSwitchTab={setTab} />
+          <ModulesTab plan={plan} isSuperAdmin={isSuperAdmin} onSwitchTab={setTab} />
         </TabsContent>
         <TabsContent value="chat" className="mt-0">
-          <AIChatTab plan={plan} />
+          <AIChatTab plan={plan} isSuperAdmin={isSuperAdmin} />
         </TabsContent>
         <TabsContent value="usage" className="mt-0">
           <UsageTab />
