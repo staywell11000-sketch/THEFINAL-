@@ -52,7 +52,6 @@ import CalendarPage from "@/pages/dashboard/calendar"
 import SettingsPage from "@/pages/dashboard/settings"
 import IntegrationsPage from "@/pages/dashboard/integrations"
 import CalculatorPage from "@/pages/dashboard/calculator"
-import AIUsagePage from "@/pages/dashboard/ai-usage"
 import DealersPage from "@/pages/dashboard/dealers"
 import { LanguageProvider } from "@/lib/i18n"
 
@@ -111,7 +110,7 @@ function DashboardRoutes() {
           <Route path="/dashboard/documents" component={DocumentsPage} />
           <Route path="/dashboard/calendar" component={CalendarPage} />
           <Route path="/dashboard/calculator" component={CalculatorPage} />
-          <Route path="/dashboard/ai-usage" component={AIUsagePage} />
+          <Route path="/dashboard/ai-usage"><Redirect to="/dashboard/ai-intelligence" /></Route>
           <Route path="/dashboard/settings" component={SettingsPage} />
           <Route path="/dashboard/integrations" component={IntegrationsPage} />
           <Route path="/dashboard/dealers" component={DealersPage} />
