@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, leadsTable, activities, deals, messages, conversations, aiUsageLogs } from "@workspace/db";
+import { db, leadsTable, activities, deals, messages, conversations, aiUsageLogs, properties } from "@workspace/db";
 import { eq, desc, inArray, and, or, isNull, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireAiCredits, consumeAiCredit } from "../middlewares/requireAiCredits";
@@ -602,6 +602,209 @@ router.get("/ai/usage", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("AI usage error:", err);
     res.status(500).json({ error: "Failed to fetch AI usage" });
+  }
+});
+
+// ── POST /deal-insights ───────────────────────────────────────────────────────
+router.post("/deal-insights", requireAuth, async (req, res) => {
+  const userId = (req as any).userId;
+  try {
+    const dealsData = await db.select().from(deals)
+      .where(eq((deals as any).createdById, userId))
+      .orderBy(desc((deals as any).updatedAt))
+      .limit(20);
+
+    if (dealsData.length === 0) {
+      return res.json({ insights: { pipelineScore: 0, summary: "No deals found. Add deals to your pipeline to get AI insights.", riskItems: [], opportunities: [], followUpPriorities: [] } });
+    }
+
+    const dealsText = dealsData.map((d: any) =>
+      `Deal: "${d.title || "Untitled"}" | Stage: ${d.stage || "unknown"} | Value: ${d.value || 0} | Created: ${d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "unknown"}`
+    ).join("\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI sales analyst for a luxury real estate CRM. Analyze the deals and return JSON:
+{
+  "pipelineScore": number (0-100),
+  "conversionProbability": string,
+  "riskItems": [{"deal": string, "risk": string, "severity": "high"|"medium"|"low"}],
+  "opportunities": [{"title": string, "description": string}],
+  "followUpPriorities": [{"deal": string, "reason": string, "urgency": "urgent"|"soon"|"normal"}],
+  "summary": string
+}`,
+        },
+        { role: "user", content: `Analyze ${dealsData.length} deals:\n${dealsText}` },
+      ],
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content ?? "{}");
+    await logUsage(userId, undefined, "deal-insights", completion.usage);
+    return res.json({ insights: parsed });
+  } catch (err) {
+    console.error("Deal insights error:", err);
+    return res.status(500).json({ error: "Failed to generate deal insights" });
+  }
+});
+
+// ── POST /business-insights ───────────────────────────────────────────────────
+router.post("/business-insights", requireAuth, async (req, res) => {
+  const userId = (req as any).userId;
+  const period = (req.body?.period ?? "weekly") as "daily" | "weekly" | "monthly";
+
+  const days = period === "daily" ? 1 : period === "weekly" ? 7 : 30;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  try {
+    const [leadsData, dealsData, recentActivities] = await Promise.all([
+      db.select().from(leadsTable).where(eq(leadsTable.createdById, userId)).limit(100),
+      db.select().from(deals).where(eq((deals as any).createdById, userId)).limit(50),
+      db.select().from(activities).where(eq(activities.createdById, userId)).orderBy(desc(activities.createdAt)).limit(30),
+    ]);
+
+    const recentLeads = leadsData.filter(l => l.createdAt && new Date(l.createdAt) >= since);
+    const closedDeals = dealsData.filter((d: any) => d.stage === "closed_won" && d.updatedAt && new Date(d.updatedAt) >= since);
+    const wonValue = closedDeals.reduce((sum: number, d: any) => sum + Number(d.value || 0), 0);
+
+    const summary = `Period: ${period} (${days} day${days !== 1 ? "s" : ""})
+Total Leads: ${leadsData.length} | New Leads: ${recentLeads.length}
+Total Deals: ${dealsData.length} | Closed Won: ${closedDeals.length} | Won Value: ${wonValue}
+Recent Activities: ${recentActivities.length}
+Lead Sources: ${Array.from(new Set(leadsData.map((l: any) => l.source).filter(Boolean))).join(", ") || "unknown"}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a business intelligence analyst for a luxury real estate CRM. Generate a business summary as JSON:
+{
+  "leadsReceived": number,
+  "dealsClosed": number,
+  "wonRevenue": string,
+  "conversionRate": string,
+  "topAgent": string,
+  "topSource": string,
+  "keyInsights": [string, string, string],
+  "conversionTrend": "up"|"down"|"stable",
+  "summary": string (2-3 sentences)
+}`,
+        },
+        { role: "user", content: summary },
+      ],
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content ?? "{}");
+    await logUsage(userId, undefined, "business-insights", completion.usage);
+    return res.json({ insights: parsed, period });
+  } catch (err) {
+    console.error("Business insights error:", err);
+    return res.status(500).json({ error: "Failed to generate business insights" });
+  }
+});
+
+// ── POST /risk-detection ──────────────────────────────────────────────────────
+router.post("/risk-detection", requireAuth, async (req, res) => {
+  const userId = (req as any).userId;
+  try {
+    const [leadsData, dealsData] = await Promise.all([
+      db.select().from(leadsTable).where(eq(leadsTable.createdById, userId)).orderBy(desc(leadsTable.updatedAt)).limit(50),
+      db.select().from(deals).where(eq((deals as any).createdById, userId)).limit(30),
+    ]);
+
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+
+    const uncontacted = leadsData.filter((l: any) => !l.lastContact && l.status !== "closed").map((l: any) => l.name);
+    const coldLeads = leadsData.filter((l: any) => l.lastContact && (now - new Date(l.lastContact).getTime()) > sevenDays && l.status !== "closed").map((l: any) => l.name);
+    const stalledDeals = dealsData.filter((d: any) => d.updatedAt && (now - new Date(d.updatedAt).getTime()) > sevenDays && d.stage !== "closed_won" && d.stage !== "closed_lost").map((d: any) => d.title || "Untitled Deal");
+
+    const context = `Total leads: ${leadsData.length}
+Uncontacted leads: ${uncontacted.length} — ${uncontacted.slice(0, 5).join(", ")}
+Cold leads (7+ days no contact): ${coldLeads.length} — ${coldLeads.slice(0, 5).join(", ")}
+Stalled deals (7+ days no update): ${stalledDeals.length} — ${stalledDeals.slice(0, 5).join(", ")}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a risk analyst for a real estate CRM. Identify risks and return JSON:
+{
+  "uncontactedLeads": [string],
+  "coldLeads": [string],
+  "stalledDeals": [string],
+  "missedOpportunities": [string],
+  "riskScore": number (0-100, 100=highest risk),
+  "summary": string
+}`,
+        },
+        { role: "user", content: context },
+      ],
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content ?? "{}");
+    parsed.uncontactedLeads = parsed.uncontactedLeads ?? uncontacted;
+    parsed.coldLeads = parsed.coldLeads ?? coldLeads;
+    parsed.stalledDeals = parsed.stalledDeals ?? stalledDeals;
+    await logUsage(userId, undefined, "risk-detection", completion.usage);
+    return res.json({ risks: parsed });
+  } catch (err) {
+    console.error("Risk detection error:", err);
+    return res.status(500).json({ error: "Failed to run risk detection" });
+  }
+});
+
+// ── POST /property-matching/:leadId ───────────────────────────────────────────
+router.post("/property-matching/:leadId", requireAuth, async (req, res) => {
+  const userId = (req as any).userId;
+  const leadId = Number(req.params.leadId);
+  try {
+    const [leadRows, propertyRows] = await Promise.all([
+      db.select().from(leadsTable).where(and(eq(leadsTable.id, leadId), eq(leadsTable.createdById, userId))).limit(1),
+      db.select().from(properties).where(eq((properties as any).listedById, userId)).limit(30),
+    ]);
+
+    if (!leadRows.length) return res.status(404).json({ error: "Lead not found" });
+    const lead = leadRows[0] as any;
+
+    if (!propertyRows.length) return res.json({ matches: [], message: "No properties in portfolio to match against." });
+
+    const leadContext = `Lead: ${lead.name} | Budget: ${lead.budget || "unknown"} | Interest: ${lead.property || "any"} | Notes: ${(lead.notes || []).slice(0, 2).join("; ")}`;
+    const propertiesContext = propertyRows.map((p: any, i: number) =>
+      `${i + 1}. ID:${p.id} | ${p.title || "Untitled"} | Type: ${p.type || "unknown"} | Price: ${p.price || 0} | Area: ${p.area || "unknown"} | Size: ${p.size || "unknown"}`
+    ).join("\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI property matching engine for a real estate CRM. Match the lead to properties and return JSON:
+{
+  "matches": [{"propertyId": number, "matchScore": number (0-100), "reason": string}],
+  "summary": string
+}
+Rank by match score descending. Return top 5 matches max.`,
+        },
+        { role: "user", content: `${leadContext}\n\nAvailable properties:\n${propertiesContext}` },
+      ],
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content ?? "{}");
+    await logUsage(userId, undefined, "property-matching", completion.usage);
+    return res.json({ matches: parsed.matches ?? [], summary: parsed.summary });
+  } catch (err) {
+    console.error("Property matching error:", err);
+    return res.status(500).json({ error: "Failed to run property matching" });
   }
 });
 

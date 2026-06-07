@@ -95,12 +95,92 @@ export const FEATURE_CONFIG: Record<string, FeatureConfig> = {
   },
   ai_intelligence: {
     name: "AI Intelligence",
+    requiredPlan: "professional",
+    benefits: [
+      "AI Lead Summaries & Reply Suggestions",
+      "GPT-4o powered CRM assistant (Agency)",
+      "Lead scoring, deal insights & risk detection (Agency)",
+      "AI property matching & business reports (Agency)",
+    ],
+  },
+  ai_summaries: {
+    name: "AI Lead Summaries",
+    requiredPlan: "professional",
+    benefits: [
+      "Budget, interests & property requirement summaries",
+      "Conversation history digest",
+      "Recommended next action",
+      "Available on every lead profile",
+    ],
+  },
+  ai_reply_suggestions: {
+    name: "AI Reply Suggestions",
+    requiredPlan: "professional",
+    benefits: [
+      "3 tailored WhatsApp reply options per conversation",
+      "Copy, edit, or send directly",
+      "Context-aware based on conversation history",
+      "Available inside WhatsApp conversations",
+    ],
+  },
+  ai_scoring: {
+    name: "AI Lead Scoring",
     requiredPlan: "agency",
     benefits: [
-      "GPT-4o powered CRM assistant",
-      "Automated lead scoring (0–100)",
-      "Bulk pipeline analysis in one click",
-      "Smart follow-up recommendations",
+      "0–100 lead score based on 5 signals",
+      "Urgency score and closing probability",
+      "Bulk analysis across entire pipeline",
+      "Auto-updated on new messages",
+    ],
+  },
+  ai_deal_insights: {
+    name: "AI Deal Insights",
+    requiredPlan: "agency",
+    benefits: [
+      "Conversion probability per deal",
+      "Deal risk and opportunity strength",
+      "Follow-up priorities",
+      "Pipeline health score",
+    ],
+  },
+  ai_business_insights: {
+    name: "AI Business Insights",
+    requiredPlan: "agency",
+    benefits: [
+      "Daily, weekly, and monthly summaries",
+      "Top agent and top campaign ranking",
+      "Leads, deals, and conversion trends",
+      "Exportable business reports",
+    ],
+  },
+  ai_risk_detection: {
+    name: "AI Risk Detection",
+    requiredPlan: "agency",
+    benefits: [
+      "Uncontacted lead alerts",
+      "Cold lead identification",
+      "Stalled deal warnings",
+      "Missed opportunity surfacing",
+    ],
+  },
+  ai_property_matching: {
+    name: "AI Property Matching",
+    requiredPlan: "agency",
+    benefits: [
+      "Match lead budget, location & plot size",
+      "Available properties ranked by fit",
+      "Smart match score per property",
+      "Available inside lead profiles",
+    ],
+  },
+  ai_chat: {
+    name: "AI Chatbot",
+    requiredPlan: "agency",
+    benefits: [
+      "Full CRM context — leads, deals, pipeline",
+      "Ask in plain language about any lead",
+      "Closing strategies and follow-up advice",
+      "Powered by GPT-4o Mini",
     ],
   },
   automations: {
