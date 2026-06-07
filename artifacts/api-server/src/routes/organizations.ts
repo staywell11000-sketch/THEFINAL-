@@ -7,34 +7,52 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
-// ── GET /api/org/me — get current user's organization ──────────────────────
-router.get("/api/org/me", requireAuth, async (req, res) => {
+router.get("/org/me", requireAuth, async (req, res) => {
   const userId = (req as any).userId as string;
   try {
+    // Try owner first, then member lookup
+    let orgId: number | null = null;
+    const ownerRow = await db.execute(sql`SELECT id FROM organizations WHERE owner_id = ${userId} ORDER BY created_at ASC LIMIT 1`);
+    if (ownerRow.rows.length) {
+      orgId = (ownerRow.rows[0] as any).id;
+    } else {
+      const memberRow = await db.execute(sql`SELECT organization_id FROM users WHERE id = ${userId} AND organization_id IS NOT NULL LIMIT 1`);
+      if (memberRow.rows.length) orgId = (memberRow.rows[0] as any).organization_id;
+    }
+    if (!orgId) return res.status(404).json({ error: "No organization found" });
     const rows = await db.execute(sql`
       SELECT o.*, p.name as plan_name, p.price_monthly, p.max_users, p.max_leads_per_month,
              p.max_whatsapp_numbers, p.max_facebook_pages, p.max_storage_gb, p.features
       FROM organizations o
       LEFT JOIN plans p ON p.slug = o.plan
-      WHERE o.owner_id = ${userId}
-         OR o.id = (SELECT organization_id FROM users WHERE id = ${userId})
+      WHERE o.id = ${orgId}
       LIMIT 1
     `);
     if (!rows.rows.length) return res.status(404).json({ error: "No organization found" });
     return res.json({ organization: rows.rows[0] });
   } catch (err) {
-    logger.error({ err }, "GET /api/org/me error");
+    logger.error({ err }, "GET /org/me error");
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ── GET /api/admin/organizations — super admin list all ────────────────────
-router.get("/api/admin/organizations", requireAuth, requireSuperAdmin, async (req, res) => {
+router.get("/admin/organizations", requireAuth, requireSuperAdmin, async (req, res) => {
   const { search, status, page = "1" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
   const limit = 50;
   const offset = (pageNum - 1) * limit;
   try {
+    let whereClause = "WHERE 1=1";
+    const params: any[] = [];
+    if (search) {
+      params.push(`%${search}%`);
+      whereClause += ` AND (o.name ILIKE $${params.length} OR u.email ILIKE $${params.length})`;
+    }
+    if (status && status !== "all") {
+      params.push(status);
+      whereClause += ` AND o.subscription_status = $${params.length}`;
+    }
+    params.push(limit, offset);
     const rows = await db.execute(sql`
       SELECT o.*, p.name as plan_name, p.price_monthly,
              u.email as owner_email, u.first_name as owner_first_name, u.last_name as owner_last_name,
@@ -43,21 +61,18 @@ router.get("/api/admin/organizations", requireAuth, requireSuperAdmin, async (re
       FROM organizations o
       LEFT JOIN plans p ON p.slug = o.plan
       LEFT JOIN users u ON u.id = o.owner_id
-      WHERE (${search ? sql`o.name ILIKE ${'%' + search + '%'} OR u.email ILIKE ${'%' + search + '%'}` : sql`true`})
-        AND (${status && status !== 'all' ? sql`o.subscription_status = ${status}` : sql`true`})
       ORDER BY o.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
     const total = await db.execute(sql`SELECT COUNT(*) FROM organizations`);
     return res.json({ data: rows.rows, total: Number((total.rows[0] as any).count), page: pageNum });
   } catch (err) {
-    logger.error({ err }, "GET /api/admin/organizations error");
+    logger.error({ err }, "GET /admin/organizations error");
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ── GET /api/admin/organizations/:id ───────────────────────────────────────
-router.get("/api/admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+router.get("/admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const rows = await db.execute(sql`
@@ -75,8 +90,7 @@ router.get("/api/admin/organizations/:id", requireAuth, requireSuperAdmin, async
   }
 });
 
-// ── PATCH /api/admin/organizations/:id ─────────────────────────────────────
-router.patch("/api/admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+router.patch("/admin/organizations/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const actorId = (req as any).userId;
   const actorEmail = (req as any).userEmail;
@@ -98,13 +112,12 @@ router.patch("/api/admin/organizations/:id", requireAuth, requireSuperAdmin, asy
     `);
     return res.json({ success: true });
   } catch (err) {
-    logger.error({ err }, "PATCH /api/admin/organizations/:id error");
+    logger.error({ err }, "PATCH /admin/organizations/:id error");
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ── POST /api/admin/organizations/:id/approve-subscription ─────────────────
-router.post("/api/admin/organizations/:id/approve-subscription", requireAuth, requireSuperAdmin, async (req, res) => {
+router.post("/admin/organizations/:id/approve-subscription", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const actorId = (req as any).userId;
   const actorEmail = (req as any).userEmail;
@@ -131,8 +144,7 @@ router.post("/api/admin/organizations/:id/approve-subscription", requireAuth, re
   }
 });
 
-// ── POST /api/admin/organizations/:id/suspend ──────────────────────────────
-router.post("/api/admin/organizations/:id/suspend", requireAuth, requireSuperAdmin, async (req, res) => {
+router.post("/admin/organizations/:id/suspend", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const actorId = (req as any).userId;
   const actorEmail = (req as any).userEmail;
@@ -148,8 +160,7 @@ router.post("/api/admin/organizations/:id/suspend", requireAuth, requireSuperAdm
   }
 });
 
-// ── POST /api/admin/organizations/:id/unsuspend ────────────────────────────
-router.post("/api/admin/organizations/:id/unsuspend", requireAuth, requireSuperAdmin, async (req, res) => {
+router.post("/admin/organizations/:id/unsuspend", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const actorId = (req as any).userId;
   const actorEmail = (req as any).userEmail;
@@ -165,8 +176,7 @@ router.post("/api/admin/organizations/:id/unsuspend", requireAuth, requireSuperA
   }
 });
 
-// ── GET /api/admin/stats ───────────────────────────────────────────────────
-router.get("/api/admin/stats", requireAuth, requireSuperAdmin, async (req, res) => {
+router.get("/admin/stats", requireAuth, requireSuperAdmin, async (req, res) => {
   try {
     const stats = await db.execute(sql`
       SELECT

@@ -6,8 +6,7 @@ import { sql } from "drizzle-orm";
 
 const router = Router();
 
-// Public — any authenticated user can read plans
-router.get("/api/plans", requireAuth, async (_req, res) => {
+router.get("/plans", requireAuth, async (_req, res) => {
   try {
     const rows = await db.execute(sql`SELECT * FROM plans WHERE is_active = true ORDER BY price_monthly ASC`);
     return res.json({ plans: rows.rows });
@@ -16,8 +15,7 @@ router.get("/api/plans", requireAuth, async (_req, res) => {
   }
 });
 
-// Admin only
-router.post("/api/admin/plans", requireAuth, requireSuperAdmin, async (req, res) => {
+router.post("/admin/plans", requireAuth, requireSuperAdmin, async (req, res) => {
   const { slug, name, priceMonthly, currency = "PKR", maxUsers, maxLeadsPerMonth, maxWhatsappNumbers, maxFacebookPages, maxStorageGb, features = [] } = req.body;
   if (!slug || !name || !priceMonthly) return res.status(400).json({ error: "slug, name, priceMonthly required" });
   try {
@@ -33,7 +31,7 @@ router.post("/api/admin/plans", requireAuth, requireSuperAdmin, async (req, res)
   }
 });
 
-router.patch("/api/admin/plans/:id", requireAuth, requireSuperAdmin, async (req, res) => {
+router.patch("/admin/plans/:id", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, priceMonthly, maxUsers, maxLeadsPerMonth, maxWhatsappNumbers, maxFacebookPages, maxStorageGb, features, isActive } = req.body;
   try {

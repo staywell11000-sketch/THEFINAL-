@@ -20,6 +20,8 @@ import {
   LogOut,
   Calculator,
   Handshake,
+  CreditCard,
+  Shield,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -28,6 +30,7 @@ import { useCurrentUser } from "@/lib/user-api"
 import { useSettings } from "@/lib/settings-api"
 import { useLocation as useWouterLocation } from "wouter"
 import { useLanguage, type TranslationKey } from "@/lib/i18n"
+import { useSuperAdmin, usePlan } from "@/lib/plan-context"
 
 const navItems: { href: string; key: TranslationKey; icon: React.ElementType }[] = [
   { href: "/dashboard",                 key: "nav.overview",        icon: LayoutDashboard },
@@ -139,6 +142,7 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
 
       {/* ── Nav items ────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto space-y-0.5 p-2 pt-3">
+        <SidebarNavExtras collapsed={collapsed} />
         {navItems.map((item) => {
           const active = isActive(item.href)
           return (
@@ -189,6 +193,64 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
         />
       </div>
     </motion.aside>
+  )
+}
+
+function SidebarNavExtras({ collapsed }: { collapsed: boolean }) {
+  const [location] = useLocation()
+  const isSuperAdmin = useSuperAdmin()
+  const { credits } = usePlan()
+  const atLimit = credits && !isSuperAdmin && (credits.available ?? 0) === 0
+
+  const extras = [
+    { href: "/dashboard/billing", label: "Billing", icon: CreditCard, show: true, badge: atLimit ? "!" : null },
+    { href: "/admin", label: "Super Admin", icon: Shield, show: isSuperAdmin, badge: null },
+  ]
+
+  return (
+    <>
+      {extras.filter(e => e.show).map(item => {
+        const active = location.startsWith(item.href)
+        return (
+          <Link key={item.href} href={item.href}>
+            <motion.div
+              whileHover={{ x: collapsed ? 0 : 2 }}
+              className={cn(
+                "relative flex h-9 items-center gap-3 rounded-xl px-3 transition-colors cursor-pointer",
+                active
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              {active && (
+                <motion.div
+                  layoutId={`activeNav-${item.href}`}
+                  className="absolute inset-0 rounded-xl bg-sidebar-primary"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+              <item.icon className={cn("relative z-10 h-4 w-4 flex-shrink-0", active ? "text-sidebar-primary-foreground" : "")} />
+              <AnimatePresence>
+                {!collapsed && (
+                  <motion.span
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="relative z-10 overflow-hidden whitespace-nowrap text-sm font-medium flex items-center gap-1.5"
+                  >
+                    {item.label}
+                    {item.badge && (
+                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">{item.badge}</span>
+                    )}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </Link>
+        )
+      })}
+    </>
   )
 }
 

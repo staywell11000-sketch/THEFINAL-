@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, leadsTable, activities, deals, messages, conversations, aiUsageLogs } from "@workspace/db";
 import { eq, desc, inArray, and, or, isNull, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
+import { requireAiCredits, consumeAiCredit } from "../middlewares/requireAiCredits";
 import { openai } from "../lib/openai";
 import { fireTrigger } from "../services/automationEngine";
 
@@ -12,18 +13,33 @@ const PRICE_OUTPUT_PER_TOKEN = 0.0000006;
 
 async function logUsage(
   userId: string,
+  orgId: number | undefined,
   operation: string,
-  usage: { prompt_tokens: number; completion_tokens: number } | undefined | null
+  usage: { prompt_tokens: number; completion_tokens: number } | undefined | null,
+  model = "gpt-4o-mini"
 ) {
   if (!usage) return;
   try {
+    // Legacy log
     await db.insert(aiUsageLogs).values({
       userId,
       operation,
-      model: "gpt-4o-mini",
+      model,
       inputTokens: usage.prompt_tokens,
       outputTokens: usage.completion_tokens,
     });
+    // Credit deduction + new ai_usage log
+    if (orgId) {
+      const totalTokens = usage.prompt_tokens + usage.completion_tokens;
+      const estimatedCost = usage.prompt_tokens * PRICE_INPUT_PER_TOKEN + usage.completion_tokens * PRICE_OUTPUT_PER_TOKEN;
+      await consumeAiCredit(orgId, userId, operation, {
+        prompt_tokens: usage.prompt_tokens,
+        completion_tokens: usage.completion_tokens,
+        total_tokens: totalTokens,
+        estimated_cost: estimatedCost,
+        model,
+      });
+    }
   } catch {}
 }
 
@@ -586,6 +602,74 @@ router.get("/ai/usage", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("AI usage error:", err);
     res.status(500).json({ error: "Failed to fetch AI usage" });
+  }
+});
+
+// ── GET /admin/ai-stats — super admin AI usage overview ───────────────────
+router.get("/admin/ai-stats", requireAuth, async (req, res) => {
+  const { requireSuperAdmin } = await import("../middlewares/requireSuperAdmin");
+  const userEmail = (req as any).userEmail;
+  if (userEmail !== "murtazaarshad499@gmail.com") {
+    const userId = (req as any).userId;
+    const roleRow = await db.execute(sql`SELECT role FROM users WHERE id = ${userId}`);
+    if ((roleRow.rows[0] as any)?.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+  try {
+    const totals = await db.execute(sql`
+      SELECT
+        COUNT(*) as total_requests,
+        COALESCE(SUM(total_tokens), 0) as total_tokens,
+        COALESCE(SUM(estimated_cost), 0) as total_cost
+      FROM ai_usage
+    `);
+    const byOrg = await db.execute(sql`
+      SELECT au.organization_id, o.name as org_name,
+             COUNT(*) as requests,
+             COALESCE(SUM(au.total_tokens), 0) as total_tokens,
+             COALESCE(SUM(au.estimated_cost), 0) as cost
+      FROM ai_usage au
+      LEFT JOIN organizations o ON o.id = au.organization_id
+      GROUP BY au.organization_id, o.name
+      ORDER BY cost DESC
+      LIMIT 20
+    `);
+    const t = totals.rows[0] as any;
+    const orgCount = byOrg.rows.length || 1;
+    return res.json({
+      total_requests: Number(t.total_requests),
+      total_tokens: Number(t.total_tokens),
+      total_cost: Number(t.total_cost),
+      avg_cost_per_org: Number(t.total_cost) / orgCount,
+      by_org: byOrg.rows,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ── GET /admin/ai-usage-log — recent AI calls ─────────────────────────────
+router.get("/admin/ai-usage-log", requireAuth, async (req, res) => {
+  const userEmail = (req as any).userEmail;
+  const userId = (req as any).userId;
+  if (userEmail !== "murtazaarshad499@gmail.com") {
+    const roleRow = await db.execute(sql`SELECT role FROM users WHERE id = ${userId}`);
+    if ((roleRow.rows[0] as any)?.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+  try {
+    const rows = await db.execute(sql`
+      SELECT au.*, o.name as org_name
+      FROM ai_usage au
+      LEFT JOIN organizations o ON o.id = au.organization_id
+      ORDER BY au.created_at DESC
+      LIMIT 100
+    `);
+    return res.json({ data: rows.rows });
+  } catch {
+    return res.status(500).json({ error: "Server error" });
   }
 });
 

@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { useCurrentUser } from "@/lib/user-api"
 import { Loader2 } from "lucide-react"
+import { PlanProvider } from "@/lib/plan-context"
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null }
@@ -53,6 +54,13 @@ import SettingsPage from "@/pages/dashboard/settings"
 import IntegrationsPage from "@/pages/dashboard/integrations"
 import CalculatorPage from "@/pages/dashboard/calculator"
 import DealersPage from "@/pages/dashboard/dealers"
+import BillingPage from "@/pages/dashboard/billing"
+import { AdminLayout } from "@/pages/admin/layout"
+import AdminOverview from "@/pages/admin/overview"
+import AdminOrganizations from "@/pages/admin/organizations"
+import AdminPayments from "@/pages/admin/payments"
+import AdminAiUsage from "@/pages/admin/ai-usage"
+import AdminAuditLogs from "@/pages/admin/audit-logs"
 import { LanguageProvider } from "@/lib/i18n"
 
 
@@ -114,6 +122,7 @@ function DashboardRoutes() {
           <Route path="/dashboard/settings" component={SettingsPage} />
           <Route path="/dashboard/integrations" component={IntegrationsPage} />
           <Route path="/dashboard/dealers" component={DealersPage} />
+          <Route path="/dashboard/billing" component={BillingPage} />
           <Route component={NotFound} />
         </Switch>
       </DashboardLayout>
@@ -127,6 +136,23 @@ function LeadProfileRoute({ params }: { params: { id: string } }) {
       <DashboardLayout>
         <LeadProfilePage params={params} />
       </DashboardLayout>
+    </ProtectedRoute>
+  )
+}
+
+function AdminRoutes() {
+  return (
+    <ProtectedRoute>
+      <AdminLayout>
+        <Switch>
+          <Route path="/admin" component={AdminOverview} />
+          <Route path="/admin/organizations" component={AdminOrganizations} />
+          <Route path="/admin/payments" component={AdminPayments} />
+          <Route path="/admin/ai-usage" component={AdminAiUsage} />
+          <Route path="/admin/audit-logs" component={AdminAuditLogs} />
+          <Route component={NotFound} />
+        </Switch>
+      </AdminLayout>
     </ProtectedRoute>
   )
 }
@@ -148,6 +174,8 @@ function Router() {
       <Route path="/dashboard/leads/:id" component={LeadProfileRoute} />
       <Route path="/dashboard" component={DashboardRoutes} />
       <Route path="/dashboard/:rest*" component={DashboardRoutes} />
+      <Route path="/admin" component={AdminRoutes} />
+      <Route path="/admin/:rest*" component={AdminRoutes} />
       <Route component={NotFound} />
     </Switch>
   )
@@ -167,10 +195,12 @@ function App() {
             <TooltipProvider>
               <LanguageProvider>
                 <AuthProvider>
-                  <ErrorBoundary>
-                    <Router />
-                  </ErrorBoundary>
-                  <Toaster />
+                  <PlanProvider>
+                    <ErrorBoundary>
+                      <Router />
+                    </ErrorBoundary>
+                    <Toaster />
+                  </PlanProvider>
                 </AuthProvider>
               </LanguageProvider>
             </TooltipProvider>

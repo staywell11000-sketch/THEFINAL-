@@ -22,6 +22,7 @@ import organizationsRouter from "./organizations";
 import paymentRequestsRouter from "./paymentRequests";
 import plansRouter from "./plans";
 import auditLogsRouter from "./auditLogs";
+import addonsRouter from "./addons";
 
 const router: IRouter = Router();
 
@@ -48,5 +49,6 @@ router.use(organizationsRouter);
 router.use(paymentRequestsRouter);
 router.use(plansRouter);
 router.use(auditLogsRouter);
+router.use(addonsRouter);
 
 export default router;

@@ -20,3 +20,5 @@ export * from "./organizations";
 export * from "./plans";
 export * from "./payment_requests";
 export * from "./audit_logs";
+export * from "./organization_addons";
+export * from "./ai_usage";

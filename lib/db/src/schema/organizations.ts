@@ -10,6 +10,8 @@ export const organizations = pgTable("organizations", {
   trialEndDate: timestamp("trial_end_date"),
   isInternal: boolean("is_internal").notNull().default(false),
   isSuspended: boolean("is_suspended").notNull().default(false),
+  aiRequestsUsed: integer("ai_requests_used").notNull().default(0),
+  aiRequestsResetAt: timestamp("ai_requests_reset_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

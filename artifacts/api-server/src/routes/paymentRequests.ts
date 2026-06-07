@@ -7,8 +7,7 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
-// ── POST /api/payments — submit a payment request ─────────────────────────
-router.post("/api/payments", requireAuth, async (req, res) => {
+router.post("/payments", requireAuth, async (req, res) => {
   const userId = (req as any).userId as string;
   const { amount, plan, screenshotUrl, notes } = req.body;
   if (!amount || !plan) return res.status(400).json({ error: "amount and plan are required" });
@@ -27,13 +26,12 @@ router.post("/api/payments", requireAuth, async (req, res) => {
     `);
     return res.status(201).json({ paymentRequest: result.rows[0] });
   } catch (err) {
-    logger.error({ err }, "POST /api/payments error");
+    logger.error({ err }, "POST /payments error");
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ── GET /api/payments/mine — current org's payment history ────────────────
-router.get("/api/payments/mine", requireAuth, async (req, res) => {
+router.get("/payments/mine", requireAuth, async (req, res) => {
   const userId = (req as any).userId as string;
   try {
     const org = await db.execute(sql`
@@ -52,8 +50,7 @@ router.get("/api/payments/mine", requireAuth, async (req, res) => {
   }
 });
 
-// ── GET /api/admin/payments — super admin list all payments ───────────────
-router.get("/api/admin/payments", requireAuth, requireSuperAdmin, async (req, res) => {
+router.get("/admin/payments", requireAuth, requireSuperAdmin, async (req, res) => {
   const { status, page = "1" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
   const limit = 50;
@@ -65,22 +62,19 @@ router.get("/api/admin/payments", requireAuth, requireSuperAdmin, async (req, re
       FROM payment_requests pr
       LEFT JOIN organizations o ON o.id = pr.organization_id
       LEFT JOIN users u ON u.id = o.owner_id
-      WHERE (${status && status !== 'all' ? sql`pr.status = ${status}` : sql`true`})
       ORDER BY pr.submitted_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
-    const total = await db.execute(sql`
-      SELECT COUNT(*) FROM payment_requests
-      WHERE (${status && status !== 'all' ? sql`status = ${status}` : sql`true`})
-    `);
-    return res.json({ data: rows.rows, total: Number((total.rows[0] as any).count) });
+    const filtered = status && status !== "all"
+      ? rows.rows.filter((r: any) => r.status === status)
+      : rows.rows;
+    return res.json({ data: filtered, total: rows.rows.length });
   } catch (err) {
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ── POST /api/admin/payments/:id/approve ──────────────────────────────────
-router.post("/api/admin/payments/:id/approve", requireAuth, requireSuperAdmin, async (req, res) => {
+router.post("/admin/payments/:id/approve", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const actorId = (req as any).userId;
   const actorEmail = (req as any).userEmail;
@@ -91,7 +85,6 @@ router.post("/api/admin/payments/:id/approve", requireAuth, requireSuperAdmin, a
     const request = pr.rows[0] as any;
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 30 * Number(months));
-
     await db.execute(sql`
       UPDATE payment_requests SET status = 'approved', approved_at = NOW(), approved_by = ${actorId}, updated_at = NOW()
       WHERE id = ${parseInt(id)}
@@ -111,13 +104,12 @@ router.post("/api/admin/payments/:id/approve", requireAuth, requireSuperAdmin, a
     `);
     return res.json({ success: true, subscriptionEndDate: endDate });
   } catch (err) {
-    logger.error({ err }, "POST /api/admin/payments/:id/approve error");
+    logger.error({ err }, "POST /admin/payments/:id/approve error");
     return res.status(500).json({ error: "Server error" });
   }
 });
 
-// ── POST /api/admin/payments/:id/reject ───────────────────────────────────
-router.post("/api/admin/payments/:id/reject", requireAuth, requireSuperAdmin, async (req, res) => {
+router.post("/admin/payments/:id/reject", requireAuth, requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const actorId = (req as any).userId;
   const actorEmail = (req as any).userEmail;

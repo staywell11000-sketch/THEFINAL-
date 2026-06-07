@@ -6,8 +6,8 @@ import { sql } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/api/admin/audit-logs", requireAuth, requireSuperAdmin, async (req, res) => {
-  const { action, orgId, page = "1" } = req.query as Record<string, string>;
+router.get("/admin/audit-logs", requireAuth, requireSuperAdmin, async (req, res) => {
+  const { page = "1" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
   const limit = 50;
   const offset = (pageNum - 1) * limit;
@@ -16,8 +16,6 @@ router.get("/api/admin/audit-logs", requireAuth, requireSuperAdmin, async (req, 
       SELECT al.*, o.name as org_name
       FROM audit_logs al
       LEFT JOIN organizations o ON o.id = al.organization_id
-      WHERE (${action ? sql`al.action ILIKE ${'%' + action + '%'}` : sql`true`})
-        AND (${orgId ? sql`al.organization_id = ${parseInt(orgId)}` : sql`true`})
       ORDER BY al.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
