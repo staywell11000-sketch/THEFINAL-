@@ -4,6 +4,9 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
+const VALID_PLAN_SLUGS = ["free", "starter", "professional", "agency"] as const;
+type PaidPlanSlug = typeof VALID_PLAN_SLUGS[number];
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -28,7 +31,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   (req as any).userEmail = user.email;
 
   // ── Step 2: Upsert user in local DB ───────────────────────
-  // Errors here are server errors, not auth failures — return 500 not 401
   try {
     const meta = (user.user_metadata ?? {}) as Record<string, string>;
     const fullName: string = meta.full_name ?? meta.name ?? "";
@@ -58,18 +60,25 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         updated_at = NOW()
     `);
 
-    // ── Step 3: Auto-create org on first login (all users) ────
-    // Only create if the user doesn't already own or belong to an org
+    // ── Step 3: Auto-create org on first login ────────────────
     const existingOwner = await db.execute(sql`SELECT id FROM organizations WHERE owner_id = ${user.id} LIMIT 1`);
     if (!existingOwner.rows.length) {
       const existingMember = await db.execute(sql`SELECT organization_id FROM users WHERE id = ${user.id} AND organization_id IS NOT NULL LIMIT 1`);
       if (!existingMember.rows.length) {
-        // Derive display name for org
         const orgName = isSuperAdmin
           ? "LuxeState Admin"
           : (firstName ? `${firstName}'s Workspace` : (email.split("@")[0] + "'s Workspace"));
-        const plan = isSuperAdmin ? "agency" : "trial";
-        const status = isSuperAdmin ? "active" : "trial";
+
+        // Read plan preference from sign-up metadata
+        const rawPlanSlug = meta.plan_slug as string | undefined;
+        const selectedPlan: PaidPlanSlug = (rawPlanSlug && (VALID_PLAN_SLUGS as readonly string[]).includes(rawPlanSlug))
+          ? rawPlanSlug as PaidPlanSlug
+          : "free";
+
+        const plan = isSuperAdmin ? "agency" : selectedPlan;
+        // free plan → active (permanently free); paid plans on sign-up → trial until payment confirmed
+        const status = isSuperAdmin ? "active" : (selectedPlan === "free" ? "active" : "trial");
+
         await db.execute(sql`
           INSERT INTO organizations (name, owner_id, plan, subscription_status, is_internal, created_at, updated_at)
           VALUES (${orgName}, ${user.id}, ${plan}, ${status}, ${isSuperAdmin}, NOW(), NOW())

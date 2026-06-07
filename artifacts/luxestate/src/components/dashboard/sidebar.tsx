@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Link, useLocation } from "wouter"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -22,6 +23,7 @@ import {
   Handshake,
   CreditCard,
   Shield,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -30,7 +32,9 @@ import { useCurrentUser } from "@/lib/user-api"
 import { useSettings } from "@/lib/settings-api"
 import { useLocation as useWouterLocation } from "wouter"
 import { useLanguage, type TranslationKey } from "@/lib/i18n"
-import { useSuperAdmin } from "@/lib/plan-context"
+import { usePlan, useSuperAdmin } from "@/lib/plan-context"
+import { UpgradeModal } from "@/components/upgrade-modal"
+import { NAV_FEATURE_MAP, FEATURE_CONFIG } from "@/lib/plan-features"
 
 const navItems: { href: string; key: TranslationKey; icon: React.ElementType }[] = [
   { href: "/dashboard",                 key: "nav.overview",        icon: LayoutDashboard },
@@ -63,137 +67,170 @@ export function Sidebar({ collapsed, setCollapsed, notifOpen, onToggleNotif, unr
   const [location] = useLocation()
   const { data: settingsData } = useSettings()
   const { t } = useLanguage()
+  const { hasFeature, org, isSuperAdmin } = usePlan()
   const businessName = settingsData?.settings?.business_name || "My CRM"
   const businessLogoUrl = settingsData?.settings?.business_logo_url
   const brandInitial = businessName.trim()[0]?.toUpperCase() ?? "C"
+
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; featureKey: string }>({
+    open: false,
+    featureKey: "",
+  })
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return location === "/dashboard"
     return location.startsWith(href)
   }
 
+  const isLocked = (href: string): boolean => {
+    if (isSuperAdmin) return false
+    const featureKey = NAV_FEATURE_MAP[href]
+    if (!featureKey) return false
+    return !hasFeature(featureKey)
+  }
+
+  const handleNavClick = (href: string, e: React.MouseEvent) => {
+    if (isLocked(href)) {
+      e.preventDefault()
+      const featureKey = NAV_FEATURE_MAP[href]
+      if (featureKey) setUpgradeModal({ open: true, featureKey })
+    }
+  }
+
   return (
-    <motion.aside
-      animate={{ width: collapsed ? 72 : 240 }}
-      transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="relative flex flex-col border-r border-sidebar-border bg-sidebar h-full overflow-hidden"
-    >
-      {/* ── Brand header ─────────────────────────────── */}
-      <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-sidebar-border px-4">
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Link href="/dashboard">
-                <div className="flex items-center gap-2 cursor-pointer select-none">
-                  {businessLogoUrl ? (
-                    <img
-                      src={businessLogoUrl}
-                      alt={businessName}
-                      className="h-8 w-8 rounded-lg object-cover shadow-sm"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
-                      <span className="text-sm font-bold text-primary-foreground">{brandInitial}</span>
-                    </div>
-                  )}
-                  <span className="text-base font-semibold tracking-tight text-sidebar-foreground truncate max-w-[140px]">
-                    {businessName}
-                  </span>
-                </div>
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {collapsed && (
-          <Link href="/dashboard">
-            <div className="flex w-full items-center justify-center cursor-pointer">
-              {businessLogoUrl ? (
-                <img
-                  src={businessLogoUrl}
-                  alt={businessName}
-                  className="h-8 w-8 rounded-lg object-cover shadow-sm"
-                />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
-                  <span className="text-sm font-bold text-primary-foreground">{brandInitial}</span>
-                </div>
-              )}
-            </div>
-          </Link>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            "h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent",
-            collapsed && "absolute right-2 top-4"
-          )}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
-      </div>
-
-      {/* ── Nav items ────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto space-y-0.5 p-2 pt-3">
-        <SidebarNavExtras collapsed={collapsed} />
-        {navItems.map((item) => {
-          const active = isActive(item.href)
-          return (
-            <Link key={item.href} href={item.href}>
+    <>
+      <motion.aside
+        animate={{ width: collapsed ? 72 : 240 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        className="relative flex flex-col border-r border-sidebar-border bg-sidebar h-full overflow-hidden"
+      >
+        {/* ── Brand header ───────────────────────────────── */}
+        <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-sidebar-border px-4">
+          <AnimatePresence>
+            {!collapsed && (
               <motion.div
-                whileHover={{ x: collapsed ? 0 : 2 }}
-                className={cn(
-                  "relative flex h-9 items-center gap-3 rounded-xl px-3 transition-colors cursor-pointer",
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.15 }}
               >
-                {active && (
-                  <motion.div
-                    layoutId="activeNav"
-                    className="absolute inset-0 rounded-xl bg-sidebar-primary"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <item.icon className={cn("relative z-10 h-4 w-4 flex-shrink-0", active ? "text-sidebar-primary-foreground" : "")} />
-                <AnimatePresence>
-                  {!collapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="relative z-10 overflow-hidden whitespace-nowrap text-sm font-medium"
-                    >
-                      {t(item.key)}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                <Link href="/dashboard">
+                  <div className="flex items-center gap-2 cursor-pointer select-none">
+                    {businessLogoUrl ? (
+                      <img src={businessLogoUrl} alt={businessName} className="h-8 w-8 rounded-lg object-cover shadow-sm" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
+                        <span className="text-sm font-bold text-primary-foreground">{brandInitial}</span>
+                      </div>
+                    )}
+                    <span className="text-base font-semibold tracking-tight text-sidebar-foreground truncate max-w-[140px]">
+                      {businessName}
+                    </span>
+                  </div>
+                </Link>
               </motion.div>
-            </Link>
-          )
-        })}
-      </nav>
+            )}
+          </AnimatePresence>
 
-      {/* ── User section ─────────────────────────────── */}
-      <div className="flex-shrink-0 border-t border-sidebar-border p-2">
-        <SidebarUserSection
-          collapsed={collapsed}
-          notifOpen={notifOpen}
-          onToggleNotif={onToggleNotif}
-          unreadCount={unreadCount}
-        />
-      </div>
-    </motion.aside>
+          {collapsed && (
+            <Link href="/dashboard">
+              <div className="flex w-full items-center justify-center cursor-pointer">
+                {businessLogoUrl ? (
+                  <img src={businessLogoUrl} alt={businessName} className="h-8 w-8 rounded-lg object-cover shadow-sm" />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-sm shadow-primary/25">
+                    <span className="text-sm font-bold text-primary-foreground">{brandInitial}</span>
+                  </div>
+                )}
+              </div>
+            </Link>
+          )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!collapsed)}
+            className={cn(
+              "h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent",
+              collapsed && "absolute right-2 top-4"
+            )}
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        {/* ── Nav items ──────────────────────────────────── */}
+        <nav className="flex-1 overflow-y-auto space-y-0.5 p-2 pt-3">
+          <SidebarNavExtras collapsed={collapsed} />
+          {navItems.map((item) => {
+            const active = isActive(item.href)
+            const locked = isLocked(item.href)
+
+            return (
+              <Link key={item.href} href={locked ? item.href : item.href} onClick={(e) => handleNavClick(item.href, e)}>
+                <motion.div
+                  whileHover={{ x: collapsed ? 0 : 2 }}
+                  className={cn(
+                    "relative flex h-9 items-center gap-3 rounded-xl px-3 transition-colors cursor-pointer",
+                    active && !locked
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : locked
+                      ? "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  {active && !locked && (
+                    <motion.div
+                      layoutId="activeNav"
+                      className="absolute inset-0 rounded-xl bg-sidebar-primary"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <item.icon className={cn(
+                    "relative z-10 h-4 w-4 flex-shrink-0",
+                    active && !locked ? "text-sidebar-primary-foreground" : locked ? "text-muted-foreground/70" : ""
+                  )} />
+                  <AnimatePresence>
+                    {!collapsed && (
+                      <motion.span
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="relative z-10 flex flex-1 items-center justify-between overflow-hidden whitespace-nowrap text-sm font-medium"
+                      >
+                        <span className={locked ? "text-muted-foreground" : ""}>{t(item.key)}</span>
+                        {locked && <Lock className="h-3 w-3 text-muted-foreground/60 ml-1 flex-shrink-0" />}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  {collapsed && locked && (
+                    <Lock className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground/50" />
+                  )}
+                </motion.div>
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* ── User section ───────────────────────────────── */}
+        <div className="flex-shrink-0 border-t border-sidebar-border p-2">
+          <SidebarUserSection
+            collapsed={collapsed}
+            notifOpen={notifOpen}
+            onToggleNotif={onToggleNotif}
+            unreadCount={unreadCount}
+          />
+        </div>
+      </motion.aside>
+
+      <UpgradeModal
+        open={upgradeModal.open}
+        onClose={() => setUpgradeModal({ open: false, featureKey: "" })}
+        featureKey={upgradeModal.featureKey}
+        currentPlan={org?.plan ?? "free"}
+      />
+    </>
   )
 }
 

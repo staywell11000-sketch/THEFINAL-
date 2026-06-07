@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { useAuth } from "@/lib/auth-context";
 
-export type PlanSlug = "trial" | "starter" | "professional" | "agency";
+export type PlanSlug = "free" | "trial" | "starter" | "professional" | "agency";
 
 export interface OrgPlan {
   orgId: number;
@@ -52,8 +52,6 @@ const PlanContext = createContext<PlanContextValue>({
 });
 
 const SUPER_ADMIN_EMAIL = "murtazaarshad499@gmail.com";
-
-const ALL_FEATURES = ["leads", "lead_sources", "properties", "dealers", "messages", "calendar", "documents", "calculator", "basic_analytics", "team", "deals", "advanced_analytics", "facebook_sync", "instagram_sync", "ai_intelligence", "automations", "priority_support"];
 
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
