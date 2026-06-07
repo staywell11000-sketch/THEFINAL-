@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { useLanguage, LANGUAGES, type Language } from "@/lib/i18n"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "next-themes"
 import { DashboardPageHeader } from "@/components/dashboard/page-header"
@@ -29,7 +28,6 @@ const TABS = [
   { id: "profile",      label: "Profile",            icon: User },
   { id: "branding",     label: "Business",           icon: Building2 },
   { id: "appearance",   label: "Appearance",         icon: Palette },
-  { id: "language",     label: "Language",           icon: Globe },
   { id: "notifications",label: "Notifications",      icon: Bell },
   { id: "security",     label: "Security",           icon: Shield },
   { id: "accounts",     label: "Connected Accounts", icon: Link2 },
@@ -215,7 +213,6 @@ export default function SettingsPage() {
   const { data, isLoading, isError, refetch } = useSettings()
   const updateSettings = useUpdateSettings()
   const { theme, setTheme } = useTheme()
-  const { language, setLanguage } = useLanguage()
   const { session, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState("profile")
 
@@ -780,55 +777,6 @@ export default function SettingsPage() {
               </Section>
             )}
 
-            {/* ─── Language ─────────────────────────────── */}
-            {activeTab === "language" && (
-              <Section title="Language & Region" subtitle="Choose your preferred language. RTL layout is applied automatically for Urdu, Pashto, and Sindhi.">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={async () => {
-                        setLanguage(lang.code as Language)
-                        try {
-                          await updateSettings.mutateAsync({ preferredLanguage: lang.code })
-                        } catch (_) {}
-                      }}
-                      className={cn(
-                        "flex items-center gap-4 rounded-xl border px-4 py-4 text-left transition-all",
-                        language === lang.code
-                          ? "border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20"
-                          : "border-border/50 hover:border-primary/40 hover:bg-secondary/20"
-                      )}
-                    >
-                      <div className={cn(
-                        "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-xl font-bold select-none",
-                        language === lang.code ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                      )}>
-                        {lang.code === "en" ? "A" : lang.nativeName[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("font-semibold text-sm", language === lang.code ? "text-primary" : "text-foreground")}>
-                          {lang.nativeName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{lang.name}</p>
-                        {lang.rtl && (
-                          <span className="mt-1 inline-block rounded-sm bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-mono">RTL</span>
-                        )}
-                      </div>
-                      {language === lang.code && (
-                        <div className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Language preference is saved to your account and applied on all devices.
-                </p>
-              </Section>
-            )}
-
             {/* ─── Notifications ────────────────────────── */}
             {activeTab === "notifications" && (
               <Section title="Notifications" subtitle="Choose when and how you want to be notified.">
@@ -850,8 +798,8 @@ export default function SettingsPage() {
                   <NotifRow
                     label="WhatsApp Messages"
                     description="Get notified when a lead replies via WhatsApp"
-                    checked={notifs.weeklyReportsEnabled}
-                    onChange={(v) => handleNotifToggle("weeklyReportsEnabled", v)}
+                    checked={notifs.whatsappNotif}
+                    onChange={(v) => handleNotifToggle("whatsappNotif", v)}
                     saving={savingNotif}
                   />
                   <NotifRow
@@ -914,7 +862,7 @@ export default function SettingsPage() {
                           <div className="flex flex-col sm:flex-row gap-5 items-start">
                             <div className="flex-shrink-0 rounded-xl border-2 border-border bg-white p-2 shadow-sm">
                               <div
-                                className="h-40 w-40"
+                                className="h-40 w-40 [&_svg]:w-full [&_svg]:h-full [&_svg]:max-w-full"
                                 dangerouslySetInnerHTML={{ __html: mfaEnrollData.qrCode }}
                               />
                             </div>

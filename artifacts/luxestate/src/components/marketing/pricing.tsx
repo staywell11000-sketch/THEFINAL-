@@ -6,6 +6,22 @@ import { Link } from "wouter"
 
 const plans = [
   {
+    name: "Free",
+    description: "Get started with the basics — no card needed",
+    price: { monthly: 0, annual: 0 },
+    features: [
+      "Dashboard",
+      "Up to 50 leads",
+      "Properties & Dealers",
+      "Calendar",
+      "1 User",
+      "500MB storage",
+    ],
+    cta: "Start Free",
+    popular: false,
+    free: true,
+  },
+  {
     name: "Starter",
     description: "Perfect for individual agents getting started",
     price: { monthly: 49, annual: 39 },
@@ -13,9 +29,9 @@ const plans = [
       "Up to 500 leads",
       "Basic analytics",
       "WhatsApp integration",
+      "Facebook & Instagram Leads",
+      "Documents",
       "Email support",
-      "Property listings (25)",
-      "Mobile app access",
     ],
     cta: "Get Started",
     popular: false,
@@ -27,30 +43,25 @@ const plans = [
     features: [
       "Up to 5,000 leads",
       "Advanced analytics",
-      "WhatsApp + SMS integration",
+      "Team management",
+      "AI Summaries & Reply Suggestions",
+      "Deals Pipeline",
       "Priority support",
-      "Unlimited property listings",
-      "Team collaboration (3 users)",
-      "Custom branding",
-      "API access",
     ],
     cta: "Get Started",
     popular: true,
   },
   {
-    name: "Enterprise",
-    description: "For teams and brokerages at scale",
+    name: "Agency",
+    description: "Full AI & automation suite for brokerages",
     price: { monthly: 299, annual: 249 },
     features: [
       "Unlimited leads",
-      "AI-powered insights",
-      "All integrations",
-      "Dedicated account manager",
-      "Unlimited everything",
+      "Full AI Intelligence",
+      "Workflow Builder & Automations",
+      "AI Chatbot",
       "Unlimited team members",
-      "White-label solution",
-      "Custom integrations",
-      "SLA guarantee",
+      "Dedicated account manager",
     ],
     cta: "Contact Sales",
     popular: false,
@@ -117,7 +128,7 @@ export function Pricing() {
           </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
@@ -125,7 +136,7 @@ export function Pricing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative ${plan.popular ? "md:-mt-4 md:mb-[-16px]" : ""}`}
+              className={`relative ${plan.popular ? "lg:-mt-4 lg:mb-[-16px]" : ""}`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
@@ -142,24 +153,35 @@ export function Pricing() {
                     : "bg-card/50 border-border/50 hover:border-primary/30"
                 }`}
               >
-                <div className="mb-6">
+                <div className="mb-5">
                   <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
                   <p className="text-sm text-muted-foreground">{plan.description}</p>
                 </div>
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">
-                      ${isAnnual ? plan.price.annual : plan.price.monthly}
-                    </span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  {isAnnual && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Billed annually (${plan.price.annual * 12}/year)
-                    </p>
+                <div className="mb-5">
+                  {(plan as any).free ? (
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-bold">Free</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">No credit card required</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-bold">
+                          ${isAnnual ? plan.price.annual : plan.price.monthly}
+                        </span>
+                        <span className="text-muted-foreground">/month</span>
+                      </div>
+                      {isAnnual && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Billed annually (${plan.price.annual * 12}/year)
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
-                <Link href="/dashboard" className="block mb-6">
+                <Link href="/dashboard" className="block mb-5">
                   <Button
                     className={`w-full font-semibold ${
                       plan.popular ? "shadow-lg shadow-primary/25 hover:shadow-primary/40" : ""

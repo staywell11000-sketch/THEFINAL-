@@ -11,13 +11,61 @@ import { useTheme } from "next-themes"
 import { supabase } from "@/lib/supabase"
 import {
   ArrowRight, ArrowLeft, Check, Loader2, Camera,
-  Building2, User, Bell, Wifi, CheckCircle2,
+  Building2, User, Bell, Wifi, CheckCircle2, Zap, Crown, Star,
 } from "lucide-react"
 import { THEMES } from "@/lib/themes"
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "")
 
-const TOTAL_STEPS = 6
+const TOTAL_STEPS = 7
+
+const ONBOARDING_PLANS = [
+  {
+    id: "free",
+    name: "Free",
+    price: "Rs. 0",
+    period: "forever",
+    description: "Get started with the basics",
+    icon: Star,
+    color: "text-muted-foreground",
+    features: ["Dashboard", "Leads (50)", "Properties", "Dealers", "Calendar", "1 User"],
+    locked: ["WhatsApp", "Analytics", "Documents", "AI Features"],
+  },
+  {
+    id: "starter",
+    name: "Starter",
+    price: "Rs. 4,999",
+    period: "/month",
+    description: "For solo agents growing their business",
+    icon: Zap,
+    color: "text-blue-500",
+    features: ["500 Leads", "WhatsApp Integration", "Facebook Lead Ads", "Analytics", "Documents"],
+    locked: ["Team Management", "AI Features", "Automations"],
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    price: "Rs. 9,999",
+    period: "/month",
+    description: "For teams that need more power",
+    icon: Crown,
+    color: "text-primary",
+    popular: true,
+    features: ["5,000 Leads", "Team Management", "AI Summaries", "AI Reply Suggestions", "Deals Pipeline"],
+    locked: ["AI Chatbot", "Automations", "Workflow Builder"],
+  },
+  {
+    id: "agency",
+    name: "Agency",
+    price: "Rs. 24,999",
+    period: "/month",
+    description: "Full AI & automation suite",
+    icon: Crown,
+    color: "text-amber-500",
+    features: ["Unlimited Leads", "Full AI Intelligence", "Automations", "Workflow Builder", "AI Chatbot"],
+    locked: [],
+  },
+]
 
 const ROLES = [
   { value: "admin",  label: "Admin",  description: "Full access — manage team, settings and all data" },
@@ -323,6 +371,71 @@ function StepPreferences({ notifs, setNotifs, whatsapp, setWhatsapp }: {
   )
 }
 
+function StepPlan({ selectedPlan, onSelect }: { selectedPlan: string; onSelect: (id: string) => void }) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Choose your plan</h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">Start free, upgrade anytime — no credit card required</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {ONBOARDING_PLANS.map((plan) => {
+          const Icon = plan.icon
+          const isSelected = selectedPlan === plan.id
+          return (
+            <button
+              key={plan.id}
+              type="button"
+              onClick={() => onSelect(plan.id)}
+              className={cn(
+                "relative flex flex-col gap-3 rounded-xl border p-4 text-left transition-all",
+                isSelected
+                  ? "border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20"
+                  : "border-border hover:border-primary/40 hover:bg-muted/20",
+              )}
+            >
+              {plan.popular && (
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                  <span className="rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon className={cn("h-4 w-4", plan.color)} />
+                  <span className="text-sm font-semibold text-foreground">{plan.name}</span>
+                </div>
+                <div className={cn("flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors",
+                  isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                )}>
+                  {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                </div>
+              </div>
+              <div>
+                <span className="text-lg font-bold text-foreground">{plan.price}</span>
+                <span className="ml-1 text-xs text-muted-foreground">{plan.period}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{plan.description}</p>
+              <ul className="space-y-1">
+                {plan.features.slice(0, 3).map((f) => (
+                  <li key={f} className="flex items-center gap-1.5 text-xs text-foreground">
+                    <Check className="h-3 w-3 text-primary flex-shrink-0" />{f}
+                  </li>
+                ))}
+                {plan.features.length > 3 && (
+                  <li className="text-xs text-muted-foreground pl-4.5">+{plan.features.length - 3} more</li>
+                )}
+              </ul>
+            </button>
+          )
+        })}
+      </div>
+      <p className="text-center text-xs text-muted-foreground">You can change your plan anytime from Billing settings</p>
+    </div>
+  )
+}
+
 function LoadingStep() {
   const steps = [
     "Setting up your profile…",
@@ -417,6 +530,7 @@ export default function OnboardingPage() {
   const [logoPreview, setLogoPreview]     = useState<string | null>(null)
   const [logoFile, setLogoFile]           = useState<File | null>(null)
   const [selectedTheme, setSelectedTheme] = useState("gold")
+  const [selectedPlan, setSelectedPlan]   = useState("free")
   const [notifs, setNotifs] = useState({ newLeads: true, dealUpdates: true, weeklyReport: true })
 
   useEffect(() => {
@@ -454,7 +568,7 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     setSubmitting(true)
     setError("")
-    setStep(7) // show loading
+    setStep(8) // show loading
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -525,7 +639,7 @@ export default function OnboardingPage() {
       setLocation("/dashboard")
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong. Please try again.")
-      setStep(6)
+      setStep(7)
       setSubmitting(false)
     }
   }
@@ -538,7 +652,7 @@ export default function OnboardingPage() {
     )
   }
 
-  const progress = step === 7 ? 100 : Math.round((step / TOTAL_STEPS) * 100)
+  const progress = step === 8 ? 100 : Math.round((step / TOTAL_STEPS) * 100)
 
   return (
     <div className="flex min-h-[100dvh] bg-gradient-to-br from-background via-background to-primary/5">
@@ -560,7 +674,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* Progress bar */}
-          {step < 7 && (
+          {step < 8 && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">Step {step} of {TOTAL_STEPS}</span>
@@ -575,7 +689,7 @@ export default function OnboardingPage() {
               </div>
               {/* Step dots */}
               <div className="mt-3 flex justify-between px-0.5">
-                {[1,2,3,4,5,6].map((s) => (
+                {[1,2,3,4,5,6,7].map((s) => (
                   <div key={s} className={cn(
                     "h-1.5 flex-1 mx-0.5 rounded-full transition-colors",
                     s < step ? "bg-primary" : s === step ? "bg-primary/60" : "bg-secondary"
@@ -620,13 +734,14 @@ export default function OnboardingPage() {
                   />
                 )}
                 {step === 5 && <StepTheme selectedTheme={selectedTheme} onSelect={handleThemeSelect} />}
-                {step === 6 && (
+                {step === 6 && <StepPlan selectedPlan={selectedPlan} onSelect={setSelectedPlan} />}
+                {step === 7 && (
                   <StepPreferences
                     notifs={notifs} setNotifs={setNotifs}
                     whatsapp={false} setWhatsapp={() => {}}
                   />
                 )}
-                {step === 7 && <LoadingStep />}
+                {step === 8 && <LoadingStep />}
               </motion.div>
             </AnimatePresence>
 
@@ -638,14 +753,14 @@ export default function OnboardingPage() {
             )}
 
             {/* Navigation */}
-            {step < 7 && (
+            {step < 8 && (
               <div className="mt-6 flex gap-3">
                 {step > 1 && (
                   <Button variant="outline" className="flex-1" onClick={() => setStep(step - 1)} disabled={submitting}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back
                   </Button>
                 )}
-                {step < 6 ? (
+                {step < 7 ? (
                   <Button
                     className="flex-1 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
                     onClick={() => setStep(step + 1)}
