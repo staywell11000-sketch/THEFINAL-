@@ -63,9 +63,10 @@ function EmptyChart({ message }: { message: string }) {
 }
 
 export default function AnalyticsPage() {
-  const { data, isLoading, error, refetch } = useAnalytics()
+  const { data, isPending, isFetching, isError, refetch } = useAnalytics()
   const [exporting, setExporting] = useState(false)
   const [tab, setTab] = useState("overview")
+  const [retrying, setRetrying] = useState(false)
 
   const handleExport = async () => {
     if (!data) return
@@ -73,19 +74,34 @@ export default function AnalyticsPage() {
     try { await exportAnalyticsPDF(data) } catch (e) { console.error(e) } finally { setExporting(false) }
   }
 
-  if (isLoading) return (
+  const handleRetry = async () => {
+    setRetrying(true)
+    try { await refetch() } finally { setRetrying(false) }
+  }
+
+  // First-ever load — no data yet, show centered spinner
+  if (isPending) return (
     <div className="flex flex-col items-center justify-center gap-3 py-16">
       <Loader2 className="h-7 w-7 animate-spin text-primary" />
       <p className="text-sm text-muted-foreground">Loading analytics…</p>
     </div>
   )
 
-  if (error || !data) return (
-    <div className="flex flex-col items-center justify-center gap-3 py-16">
-      <AlertCircle className="h-7 w-7 text-destructive" />
-      <p className="text-sm font-medium">Failed to load analytics</p>
-      <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-1 gap-2">
-        <RefreshCw className="h-4 w-4" /> Retry
+  // First-load hard error — no data at all, show full error panel
+  if (isError && !data) return (
+    <div className="flex flex-col items-center justify-center gap-4 py-16">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10">
+        <AlertCircle className="h-7 w-7 text-destructive" />
+      </div>
+      <div className="text-center">
+        <p className="text-base font-semibold">Failed to load analytics</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The server may be starting up. Your data is safe — try again in a moment.
+        </p>
+      </div>
+      <Button variant="outline" size="sm" onClick={handleRetry} disabled={retrying} className="mt-1 gap-2">
+        <RefreshCw className={cn("h-4 w-4", retrying && "animate-spin")} />
+        {retrying ? "Retrying…" : "Try Again"}
       </Button>
     </div>
   )
@@ -99,12 +115,36 @@ export default function AnalyticsPage() {
         title="Analytics & Insights"
         description="Real-time performance metrics from your database."
         actions={
-          <Button variant="outline" className="gap-2 border-border/50" onClick={handleExport} disabled={exporting}>
-            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Export PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            {isFetching && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Updating…
+              </span>
+            )}
+            <Button variant="outline" className="gap-2 border-border/50" onClick={handleRetry} disabled={retrying || isFetching}>
+              <RefreshCw className={cn("h-4 w-4", (retrying || isFetching) && "animate-spin")} />
+              Refresh
+            </Button>
+            <Button variant="outline" className="gap-2 border-border/50" onClick={handleExport} disabled={exporting || !data}>
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Export PDF
+            </Button>
+          </div>
         }
       />
+
+      {/* Soft error — re-fetch failed but stale data is still shown */}
+      {isError && data && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
+          <span className="text-amber-700 dark:text-amber-400">
+            Data may be outdated — couldn't refresh. Showing last known results.
+          </span>
+          <Button variant="ghost" size="sm" onClick={handleRetry} disabled={retrying} className="ml-auto h-7 gap-1.5 px-2 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400">
+            <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} /> Retry
+          </Button>
+        </div>
+      )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-2">
