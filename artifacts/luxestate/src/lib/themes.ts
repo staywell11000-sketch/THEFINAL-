@@ -15,21 +15,27 @@ export type Theme = {
   }
 }
 
+export type ThemePair = {
+  label: string
+  light: Theme
+  dark: Theme
+}
+
 export const THEMES: Theme[] = [
   {
-    id: "light",
-    name: "Light",
-    description: "Clean white — crisp and minimal",
+    id: "gold",
+    name: "Gold",
+    description: "Warm amber — luxurious and bold",
     dark: false,
-    swatches: ["#3B7FD4", "#FFFFFF", "#F4F6FB"],
+    swatches: ["#C4943A", "#E8C88A", "#FDF6E8"],
     preview: {
-      bg:      "#F4F6FB",
-      sidebar: "#FFFFFF",
+      bg:      "#FDF6E8",
+      sidebar: "#FFFCF4",
       card:    "#FFFFFF",
-      primary: "#3B7FD4",
-      text:    "#1A2233",
-      muted:   "#8A95A8",
-      border:  "#DDE3ED",
+      primary: "#C4943A",
+      text:    "#2A1E0A",
+      muted:   "#8A7040",
+      border:  "#EAD9A8",
     },
   },
   {
@@ -46,6 +52,22 @@ export const THEMES: Theme[] = [
       text:    "#F0EFE8",
       muted:   "#8A8898",
       border:  "#2E2E3E",
+    },
+  },
+  {
+    id: "light",
+    name: "Light",
+    description: "Clean white — crisp and minimal",
+    dark: false,
+    swatches: ["#3B7FD4", "#FFFFFF", "#F4F6FB"],
+    preview: {
+      bg:      "#F4F6FB",
+      sidebar: "#FFFFFF",
+      card:    "#FFFFFF",
+      primary: "#3B7FD4",
+      text:    "#1A2233",
+      muted:   "#8A95A8",
+      border:  "#DDE3ED",
     },
   },
   {
@@ -81,6 +103,22 @@ export const THEMES: Theme[] = [
     },
   },
   {
+    id: "corporate-blue-dark",
+    name: "Corporate Blue Dark",
+    description: "Deep navy — powerful and precise",
+    dark: true,
+    swatches: ["#4F8EF7", "#0A0F1E", "#060B18"],
+    preview: {
+      bg:      "#0A0F1E",
+      sidebar: "#060B18",
+      card:    "#101826",
+      primary: "#4F8EF7",
+      text:    "#E8EFF8",
+      muted:   "#7A90B0",
+      border:  "#1A2D45",
+    },
+  },
+  {
     id: "emerald",
     name: "Emerald",
     description: "Rich green — fresh and prestige",
@@ -97,19 +135,19 @@ export const THEMES: Theme[] = [
     },
   },
   {
-    id: "gold",
-    name: "Gold",
-    description: "Warm amber — luxurious and bold",
-    dark: false,
-    swatches: ["#C4943A", "#E8C88A", "#FDF6E8"],
+    id: "emerald-dark",
+    name: "Emerald Dark",
+    description: "Deep forest — rich and immersive",
+    dark: true,
+    swatches: ["#3DB87A", "#0A1610", "#071210"],
     preview: {
-      bg:      "#FDF6E8",
-      sidebar: "#FFFCF4",
-      card:    "#FFFFFF",
-      primary: "#C4943A",
-      text:    "#2A1E0A",
-      muted:   "#8A7040",
-      border:  "#EAD9A8",
+      bg:      "#0A1610",
+      sidebar: "#071210",
+      card:    "#0F1E15",
+      primary: "#3DB87A",
+      text:    "#E6F2EB",
+      muted:   "#6BA882",
+      border:  "#182E20",
     },
   },
   {
@@ -127,5 +165,49 @@ export const THEMES: Theme[] = [
       muted:   "#6A7D90",
       border:  "#D0D9E4",
     },
+  },
+  {
+    id: "modern-gray-dark",
+    name: "Modern Gray Dark",
+    description: "Charcoal slate — refined and minimal",
+    dark: true,
+    swatches: ["#7899BE", "#181C28", "#10141E"],
+    preview: {
+      bg:      "#181C28",
+      sidebar: "#10141E",
+      card:    "#1E2435",
+      primary: "#7899BE",
+      text:    "#E8ECF4",
+      muted:   "#8090A8",
+      border:  "#2A3048",
+    },
+  },
+]
+
+export const THEME_PAIRS: ThemePair[] = [
+  {
+    label: "Gold & Amber",
+    light: THEMES.find(t => t.id === "gold")!,
+    dark:  THEMES.find(t => t.id === "dark")!,
+  },
+  {
+    label: "Blue",
+    light: THEMES.find(t => t.id === "light")!,
+    dark:  THEMES.find(t => t.id === "midnight")!,
+  },
+  {
+    label: "Corporate Blue",
+    light: THEMES.find(t => t.id === "corporate-blue")!,
+    dark:  THEMES.find(t => t.id === "corporate-blue-dark")!,
+  },
+  {
+    label: "Emerald",
+    light: THEMES.find(t => t.id === "emerald")!,
+    dark:  THEMES.find(t => t.id === "emerald-dark")!,
+  },
+  {
+    label: "Modern Gray",
+    light: THEMES.find(t => t.id === "modern-gray")!,
+    dark:  THEMES.find(t => t.id === "modern-gray-dark")!,
   },
 ]
