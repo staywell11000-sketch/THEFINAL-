@@ -233,8 +233,9 @@ function App() {
           <ThemeProvider
             attribute="class"
             defaultTheme="gold"
+            storageKey="luxestate-theme"
             enableSystem={false}
-            themes={["gold", "midnight", "ocean", "emerald", "rose", "slate", "violet"]}
+            themes={["light", "dark", "midnight", "corporate-blue", "emerald", "gold", "modern-gray"]}
           >
             <TooltipProvider>
               <LanguageProvider>

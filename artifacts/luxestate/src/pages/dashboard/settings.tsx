@@ -751,44 +751,171 @@ export default function SettingsPage() {
 
             {/* ─── Appearance ───────────────────────────── */}
             {activeTab === "appearance" && (
-              <Section title="Appearance" subtitle="Customize how your CRM looks and behaves.">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-3 block">Color Theme</label>
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    {THEMES.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => handleThemeChange(t.id)}
-                        className={cn(
-                          "flex items-center gap-3.5 rounded-xl border px-4 py-3 text-left transition-all",
-                          theme === t.id
-                            ? "border-primary bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20"
-                            : "border-border/50 hover:border-primary/40 hover:bg-secondary/20"
-                        )}
-                      >
-                        <div className="flex flex-shrink-0 -space-x-1.5">
-                          {t.swatches.map((color, i) => (
+              <Section title="Appearance" subtitle="Customize how your CRM looks and feels. Changes apply instantly across the entire app.">
+
+                {/* Theme picker */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-foreground">Color Theme</label>
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-md bg-secondary">
+                      {THEMES.find(t => t.id === theme)?.name ?? "Gold"}
+                    </span>
+                  </div>
+
+                  {/* Light themes */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Light</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {THEMES.filter(t => !t.dark).map((t) => {
+                        const active = theme === t.id
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => handleThemeChange(t.id)}
+                            className={cn(
+                              "group relative flex flex-col rounded-xl border-2 overflow-hidden text-left transition-all duration-150",
+                              active
+                                ? "border-primary shadow-lg shadow-primary/15 scale-[1.01]"
+                                : "border-border/40 hover:border-border hover:shadow-md hover:scale-[1.005]"
+                            )}
+                          >
+                            {/* Mini UI preview */}
                             <div
-                              key={i}
-                              className="h-7 w-7 rounded-full border-2 border-white shadow-sm"
-                              style={{ background: color, zIndex: 3 - i }}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={cn("text-sm font-semibold", theme === t.id ? "text-primary" : "text-foreground")}>{t.name}</p>
-                          <p className="text-xs text-muted-foreground">{t.description}</p>
-                        </div>
-                        {theme === t.id && (
-                          <div className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                            <Check className="h-3 w-3 text-primary-foreground" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                              className="flex h-20 w-full overflow-hidden"
+                              style={{ background: t.preview.bg }}
+                            >
+                              {/* Sidebar strip */}
+                              <div
+                                className="w-8 h-full flex flex-col gap-1 p-1 shrink-0"
+                                style={{ background: t.preview.sidebar, borderRight: `1px solid ${t.preview.border}` }}
+                              >
+                                <div className="w-4 h-1.5 rounded-sm mt-1" style={{ background: t.preview.primary }} />
+                                {[1,2,3,4].map(i => (
+                                  <div key={i} className="h-1 rounded-sm" style={{ background: i === 1 ? t.preview.primary + "40" : t.preview.muted + "50", width: i === 1 ? "100%" : "80%" }} />
+                                ))}
+                              </div>
+                              {/* Content area */}
+                              <div className="flex-1 p-1.5 flex flex-col gap-1">
+                                {/* Top bar */}
+                                <div className="flex items-center gap-1">
+                                  <div className="h-1.5 rounded-sm flex-1" style={{ background: t.preview.muted + "60" }} />
+                                  <div className="h-4 w-4 rounded-full" style={{ background: t.preview.primary }} />
+                                </div>
+                                {/* Cards row */}
+                                <div className="grid grid-cols-3 gap-1 flex-1">
+                                  {[1,2,3].map(i => (
+                                    <div key={i} className="rounded-md p-1 flex flex-col gap-0.5"
+                                      style={{ background: t.preview.card, border: `1px solid ${t.preview.border}` }}>
+                                      <div className="h-1 w-3/4 rounded-sm" style={{ background: t.preview.muted + "80" }} />
+                                      <div className="h-2 w-full rounded-sm" style={{ background: i === 1 ? t.preview.primary + "80" : t.preview.text + "30" }} />
+                                    </div>
+                                  ))}
+                                </div>
+                                {/* Table-like row */}
+                                <div className="rounded-md px-1 py-0.5 flex gap-1"
+                                  style={{ background: t.preview.card, border: `1px solid ${t.preview.border}` }}>
+                                  <div className="h-1 flex-1 rounded-sm" style={{ background: t.preview.muted + "60" }} />
+                                  <div className="h-1 w-6 rounded-sm" style={{ background: t.preview.primary + "60" }} />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Label row */}
+                            <div
+                              className="flex items-center justify-between px-3 py-2"
+                              style={{ background: t.preview.card, borderTop: `1px solid ${t.preview.border}` }}
+                            >
+                              <div>
+                                <p className="text-xs font-semibold leading-tight" style={{ color: t.preview.text }}>{t.name}</p>
+                                <p className="text-[10px] leading-tight mt-0.5" style={{ color: t.preview.muted }}>{t.description}</p>
+                              </div>
+                              {active && (
+                                <div className="h-4 w-4 rounded-full flex items-center justify-center shrink-0"
+                                  style={{ background: t.preview.primary }}>
+                                  <Check className="h-2.5 w-2.5" style={{ color: "white" }} />
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dark themes */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Dark</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {THEMES.filter(t => t.dark).map((t) => {
+                        const active = theme === t.id
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => handleThemeChange(t.id)}
+                            className={cn(
+                              "group relative flex flex-col rounded-xl border-2 overflow-hidden text-left transition-all duration-150",
+                              active
+                                ? "border-primary shadow-lg shadow-primary/15 scale-[1.01]"
+                                : "border-border/40 hover:border-border hover:shadow-md hover:scale-[1.005]"
+                            )}
+                          >
+                            <div
+                              className="flex h-20 w-full overflow-hidden"
+                              style={{ background: t.preview.bg }}
+                            >
+                              <div
+                                className="w-8 h-full flex flex-col gap-1 p-1 shrink-0"
+                                style={{ background: t.preview.sidebar, borderRight: `1px solid ${t.preview.border}` }}
+                              >
+                                <div className="w-4 h-1.5 rounded-sm mt-1" style={{ background: t.preview.primary }} />
+                                {[1,2,3,4].map(i => (
+                                  <div key={i} className="h-1 rounded-sm" style={{ background: i === 1 ? t.preview.primary + "50" : t.preview.muted + "40", width: i === 1 ? "100%" : "80%" }} />
+                                ))}
+                              </div>
+                              <div className="flex-1 p-1.5 flex flex-col gap-1">
+                                <div className="flex items-center gap-1">
+                                  <div className="h-1.5 rounded-sm flex-1" style={{ background: t.preview.muted + "50" }} />
+                                  <div className="h-4 w-4 rounded-full" style={{ background: t.preview.primary }} />
+                                </div>
+                                <div className="grid grid-cols-3 gap-1 flex-1">
+                                  {[1,2,3].map(i => (
+                                    <div key={i} className="rounded-md p-1 flex flex-col gap-0.5"
+                                      style={{ background: t.preview.card, border: `1px solid ${t.preview.border}` }}>
+                                      <div className="h-1 w-3/4 rounded-sm" style={{ background: t.preview.muted + "70" }} />
+                                      <div className="h-2 w-full rounded-sm" style={{ background: i === 1 ? t.preview.primary + "80" : t.preview.text + "20" }} />
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="rounded-md px-1 py-0.5 flex gap-1"
+                                  style={{ background: t.preview.card, border: `1px solid ${t.preview.border}` }}>
+                                  <div className="h-1 flex-1 rounded-sm" style={{ background: t.preview.muted + "50" }} />
+                                  <div className="h-1 w-6 rounded-sm" style={{ background: t.preview.primary + "70" }} />
+                                </div>
+                              </div>
+                            </div>
+                            <div
+                              className="flex items-center justify-between px-3 py-2"
+                              style={{ background: t.preview.card, borderTop: `1px solid ${t.preview.border}` }}
+                            >
+                              <div>
+                                <p className="text-xs font-semibold leading-tight" style={{ color: t.preview.text }}>{t.name}</p>
+                                <p className="text-[10px] leading-tight mt-0.5" style={{ color: t.preview.muted }}>{t.description}</p>
+                              </div>
+                              {active && (
+                                <div className="h-4 w-4 rounded-full flex items-center justify-center shrink-0"
+                                  style={{ background: t.preview.primary }}>
+                                  <Check className="h-2.5 w-2.5" style={{ color: "white" }} />
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
 
+                {/* Time Format */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-3 block">Time Format</label>
                   <div className="flex gap-3">
