@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
+import { usePlan } from "@/lib/plan-context"
+import { apiFetch } from "@/lib/api-fetch"
 import {
   getConversations,
   createConversation,
@@ -20,6 +22,7 @@ import {
   MessageCircle, Search, Plus, Send, Phone, Mail,
   CheckCheck, Check, Clock, MoreVertical, X,
   Loader2, MessageSquare, Archive, RefreshCw, StickyNote,
+  Sparkles, Copy, ChevronDown, ChevronUp,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -169,6 +172,157 @@ function MessageBubble({ msg }: { msg: Message }) {
   )
 }
 
+// ─── AI Reply Suggestions Strip ───────────────────────────
+
+interface AISuggestionsProps {
+  conversationId: string
+  onSelect: (text: string) => void
+  onSend: (text: string) => void
+  disabled: boolean
+}
+
+function AISuggestions({ conversationId, onSelect, onSend, disabled }: AISuggestionsProps) {
+  const [expanded, setExpanded] = useState(false)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
+
+  const fetchSuggestions = async () => {
+    if (fetched) { setExpanded(true); return }
+    setLoading(true)
+    setExpanded(true)
+    try {
+      const res = await apiFetch("/ai/reply-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId }),
+      })
+      if (!res.ok) throw new Error("API error")
+      const data = await res.json()
+      setSuggestions(data.suggestions ?? [])
+      setFetched(true)
+    } catch {
+      toast.error("Could not generate reply suggestions")
+      setExpanded(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => toast.success("Copied!")).catch(() => {})
+  }
+
+  const handleRefresh = async () => {
+    setFetched(false)
+    setSuggestions([])
+    setLoading(true)
+    try {
+      const res = await apiFetch("/ai/reply-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId }),
+      })
+      if (!res.ok) throw new Error("API error")
+      const data = await res.json()
+      setSuggestions(data.suggestions ?? [])
+      setFetched(true)
+    } catch {
+      toast.error("Could not refresh suggestions")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Reset when conversation changes
+  useEffect(() => {
+    setExpanded(false)
+    setSuggestions([])
+    setFetched(false)
+  }, [conversationId])
+
+  return (
+    <div className="border-t border-border/50">
+      {/* Toggle bar */}
+      <button
+        onClick={expanded ? () => setExpanded(false) : fetchSuggestions}
+        disabled={disabled || loading}
+        className={cn(
+          "w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors",
+          expanded
+            ? "bg-violet-500/8 text-violet-600 dark:text-violet-400"
+            : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+        )}
+      >
+        {loading ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" />
+        ) : (
+          <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+        )}
+        <span>AI Reply Suggestions</span>
+        {expanded
+          ? <ChevronDown className="ml-auto h-3 w-3" />
+          : <ChevronUp className="ml-auto h-3 w-3" />
+        }
+      </button>
+
+      {/* Suggestions panel */}
+      {expanded && (
+        <div className="px-3 pb-2 space-y-1.5 bg-violet-500/5">
+          {loading ? (
+            <div className="flex items-center justify-center py-3 gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Generating suggestions…
+            </div>
+          ) : suggestions.length === 0 ? (
+            <p className="text-center text-xs text-muted-foreground py-3">No suggestions available</p>
+          ) : (
+            <>
+              {suggestions.map((s, i) => (
+                <div
+                  key={i}
+                  className="group flex items-start gap-2 rounded-lg border border-violet-200/50 dark:border-violet-800/30 bg-card/70 px-3 py-2 hover:border-violet-400/50 transition-colors"
+                >
+                  <p
+                    className="flex-1 text-xs text-foreground leading-relaxed cursor-pointer hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                    onClick={() => onSelect(s)}
+                    title="Click to edit"
+                  >
+                    {s}
+                  </p>
+                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleCopy(s)}
+                      title="Copy"
+                      className="rounded p-1 hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => { onSend(s); setExpanded(false) }}
+                      title="Send now"
+                      className="rounded p-1 hover:bg-primary/10 transition-colors text-muted-foreground hover:text-primary"
+                    >
+                      <Send className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground py-1 transition-colors"
+              >
+                <RefreshCw className="h-2.5 w-2.5" /> Refresh suggestions
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Empty State ──────────────────────────────────────────
 
 function EmptyThread() {
@@ -189,6 +343,9 @@ function EmptyThread() {
 
 export default function MessagesPage() {
   const { session, user } = useAuth()
+  const { hasFeature, isSuperAdmin } = usePlan()
+  const canUseAiSuggestions = isSuperAdmin || hasFeature("ai_reply_suggestions")
+
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loadingConvs, setLoadingConvs] = useState(true)
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
@@ -204,6 +361,7 @@ export default function MessagesPage() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const selectedConv = conversations.find((c) => c.id === selectedConvId) ?? null
+  const isWhatsApp = selectedConv?.channel === "whatsapp"
 
   // Load conversations
   const loadConversations = useCallback(async () => {
@@ -242,10 +400,10 @@ export default function MessagesPage() {
     setTimeout(() => inputRef.current?.focus(), 100)
   }
 
-  const handleSend = async () => {
-    if (!text.trim() || !selectedConvId || !user?.id) return
-    const content = text.trim()
-    setText("")
+  const handleSend = async (overrideText?: string) => {
+    const content = (overrideText ?? text).trim()
+    if (!content || !selectedConvId || !user?.id) return
+    if (!overrideText) setText("")
     setSendingMsg(true)
 
     const channel = selectedConv?.channel ?? "crm"
@@ -272,7 +430,7 @@ export default function MessagesPage() {
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to send message")
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
-      setText(content)
+      if (!overrideText) setText(content)
     } finally {
       setSendingMsg(false)
     }
@@ -300,6 +458,8 @@ export default function MessagesPage() {
       const name = (c.contact?.name ?? c.title ?? "").toLowerCase()
       return name.includes(search.toLowerCase())
     })
+
+  const isResolved = selectedConv?.status === "resolved"
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -411,6 +571,11 @@ export default function MessagesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  {isWhatsApp && (
+                    <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-green-500/10 text-green-600">
+                      <span className="font-bold">W</span> WhatsApp
+                    </span>
+                  )}
                   <span className={cn(
                     "rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize",
                     selectedConv.status === "active" ? "bg-green-500/10 text-green-600" :
@@ -446,58 +611,70 @@ export default function MessagesPage() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Input */}
-              <div className="border-t border-border bg-card/40 p-3 space-y-2">
-                {/* Type toggle */}
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setMsgType("text")}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                      msgType === "text" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" /> Message
-                  </button>
-                  <button
-                    onClick={() => setMsgType("note")}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                      msgType === "note" ? "bg-amber-500/10 text-amber-600" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <StickyNote className="h-3.5 w-3.5" /> Internal Note
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Input
-                    ref={inputRef}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-                    placeholder={msgType === "note" ? "Write an internal note..." : "Type a message…"}
-                    className={cn(
-                      "flex-1 text-sm",
-                      msgType === "note" && "border-amber-500/30 focus-visible:ring-amber-500/30"
-                    )}
-                    disabled={sendingMsg || selectedConv.status === "resolved"}
+              {/* Input area */}
+              <div className="border-t border-border bg-card/40">
+                {/* AI Reply Suggestions — WhatsApp + Professional+ only */}
+                {isWhatsApp && canUseAiSuggestions && !isResolved && selectedConvId && (
+                  <AISuggestions
+                    conversationId={selectedConvId}
+                    onSelect={(s) => { setText(s); setTimeout(() => inputRef.current?.focus(), 50) }}
+                    onSend={(s) => handleSend(s)}
+                    disabled={sendingMsg}
                   />
-                  <Button
-                    onClick={handleSend}
-                    disabled={!text.trim() || sendingMsg || selectedConv.status === "resolved"}
-                    size="icon"
-                    className={cn(
-                      "flex-shrink-0",
-                      msgType === "note" && "bg-amber-500 hover:bg-amber-600 text-white"
-                    )}
-                  >
-                    {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
-                </div>
-                {selectedConv.status === "resolved" && (
-                  <p className="text-center text-xs text-muted-foreground">This conversation is archived</p>
                 )}
+
+                <div className="p-3 space-y-2">
+                  {/* Type toggle */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setMsgType("text")}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                        msgType === "text" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" /> Message
+                    </button>
+                    <button
+                      onClick={() => setMsgType("note")}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                        msgType === "note" ? "bg-amber-500/10 text-amber-600" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <StickyNote className="h-3.5 w-3.5" /> Internal Note
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={inputRef}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                      placeholder={msgType === "note" ? "Write an internal note..." : "Type a message…"}
+                      className={cn(
+                        "flex-1 text-sm",
+                        msgType === "note" && "border-amber-500/30 focus-visible:ring-amber-500/30"
+                      )}
+                      disabled={sendingMsg || isResolved}
+                    />
+                    <Button
+                      onClick={() => handleSend()}
+                      disabled={!text.trim() || sendingMsg || isResolved}
+                      size="icon"
+                      className={cn(
+                        "flex-shrink-0",
+                        msgType === "note" && "bg-amber-500 hover:bg-amber-600 text-white"
+                      )}
+                    >
+                      {sendingMsg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {isResolved && (
+                    <p className="text-center text-xs text-muted-foreground">This conversation is archived</p>
+                  )}
+                </div>
               </div>
             </>
           )}

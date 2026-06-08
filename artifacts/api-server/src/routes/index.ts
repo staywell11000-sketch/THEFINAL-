@@ -23,6 +23,7 @@ import paymentRequestsRouter from "./paymentRequests";
 import plansRouter from "./plans";
 import auditLogsRouter from "./auditLogs";
 import addonsRouter from "./addons";
+import facebookRouter from "./facebook";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(paymentRequestsRouter);
 router.use(plansRouter);
 router.use(auditLogsRouter);
 router.use(addonsRouter);
+router.use(facebookRouter);
 
 export default router;

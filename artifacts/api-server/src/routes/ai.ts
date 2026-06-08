@@ -605,6 +605,80 @@ router.get("/ai/usage", requireAuth, async (req, res) => {
   }
 });
 
+// ── POST /reply-suggestions ───────────────────────────────────────────────────
+router.post("/reply-suggestions", requireAuth, async (req, res) => {
+  const userId = (req as any).userId;
+  const { conversationId } = req.body;
+
+  if (!conversationId) {
+    return res.status(400).json({ error: "conversationId is required" });
+  }
+
+  try {
+    // Fetch recent messages from the conversation
+    const recentMessages = await db
+      .select({
+        content: messages.content,
+        direction: messages.direction,
+        createdAt: messages.createdAt,
+      })
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId))
+      .orderBy(desc(messages.createdAt))
+      .limit(15);
+
+    if (recentMessages.length === 0) {
+      return res.json({ suggestions: [
+        "Thank you for reaching out! How can I help you today?",
+        "Hello! I'd be happy to assist you. What are you looking for?",
+        "Hi! Welcome. Please let me know your requirements and I'll get back to you shortly.",
+      ]});
+    }
+
+    // Build conversation context (oldest first)
+    const convoContext = [...recentMessages].reverse().map((m) => {
+      const role = m.direction === "inbound" ? "Lead" : "Agent";
+      return `${role}: ${m.content}`;
+    }).join("\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert real estate agent assistant. Based on the WhatsApp conversation below, generate exactly 3 short, professional, and warm reply suggestions for the agent to send next. 
+Each reply should be:
+- Conversational and natural (WhatsApp style)
+- 1-3 sentences maximum
+- Relevant to the conversation context
+- In the same language as the conversation
+
+Return JSON: { "suggestions": ["reply1", "reply2", "reply3"] }`,
+        },
+        {
+          role: "user",
+          content: `WhatsApp conversation:\n${convoContext}\n\nGenerate 3 reply options for the agent to send next.`,
+        },
+      ],
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content ?? "{}");
+    await logUsage(userId, undefined, "reply-suggestions", completion.usage);
+
+    return res.json({
+      suggestions: parsed.suggestions ?? [
+        "Thank you for your message. I'll get back to you shortly.",
+        "Noted! I'll prepare some options for you.",
+        "Thanks for reaching out. Let me check and respond soon.",
+      ]
+    });
+  } catch (err) {
+    console.error("Reply suggestions error:", err);
+    return res.status(500).json({ error: "Failed to generate reply suggestions" });
+  }
+});
+
 // ── POST /deal-insights ───────────────────────────────────────────────────────
 router.post("/deal-insights", requireAuth, async (req, res) => {
   const userId = (req as any).userId;
