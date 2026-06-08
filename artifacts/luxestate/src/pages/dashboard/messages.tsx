@@ -465,7 +465,7 @@ export default function MessagesPage() {
     <div className="flex flex-1 flex-col overflow-hidden">
       <DashboardPageHeader
         title="Messages"
-        subtitle="Send and receive messages with your leads"
+        description="Send and receive messages with your leads"
         actions={
           <Button size="sm" className="gap-2" onClick={() => setShowNewModal(true)}>
             <Plus className="h-4 w-4" /> New Conversation
