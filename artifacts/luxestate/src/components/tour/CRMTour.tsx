@@ -1,106 +1,38 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, ArrowRight, CheckCheck, Map } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ArrowRight, CheckCheck, X } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useCurrentUser } from "@/lib/user-api"
-
-// ── Step definitions ───────────────────────────────────────────────────────
 
 type TourStep = {
   target: string
   title: string
   description: string
   emoji: string
+  color: string
 }
 
 const STEPS: TourStep[] = [
-  {
-    target: "tour-dashboard",
-    emoji: "🏠",
-    title: "Dashboard Overview",
-    description: "Your command center — live pipeline metrics, revenue forecasts, recent activity, and today's tasks, all in one place.",
-  },
-  {
-    target: "tour-leads",
-    emoji: "👥",
-    title: "Leads",
-    description: "Capture, qualify, and nurture every prospect. Filter by source, status, or agent and track every touchpoint end-to-end.",
-  },
-  {
-    target: "tour-messages",
-    emoji: "💬",
-    title: "Messages",
-    description: "Your unified WhatsApp inbox. Reply to leads, send media, and have every conversation logged automatically in the CRM.",
-  },
-  {
-    target: "tour-properties",
-    emoji: "🏢",
-    title: "Properties",
-    description: "Manage your full property portfolio. Add listings, attach photos and floor plans, and instantly match them to the right leads.",
-  },
-  {
-    target: "tour-dealers",
-    emoji: "🤝",
-    title: "Dealers",
-    description: "Track your network of dealers and brokers — their active listings, commission records, and referral performance over time.",
-  },
-  {
-    target: "tour-analytics",
-    emoji: "📊",
-    title: "Analytics",
-    description: "Data-driven insights on lead conversion, team performance, and revenue pipeline. Export beautiful reports in one click.",
-  },
-  {
-    target: "tour-ai",
-    emoji: "🧠",
-    title: "AI Intelligence",
-    description: "Your AI co-pilot. Ask anything about a lead, get closing strategies, draft follow-ups, and surface your hottest opportunities.",
-  },
-  {
-    target: "tour-automations",
-    emoji: "⚡",
-    title: "Automations",
-    description: "Build no-code workflows that run on autopilot — auto-send WhatsApp, assign leads by rules, follow up without lifting a finger.",
-  },
-  {
-    target: "tour-team",
-    emoji: "👨‍💼",
-    title: "Team",
-    description: "Manage your agents, assign roles, and track individual performance. Invite members and fine-tune access permissions per role.",
-  },
-  {
-    target: "tour-deals",
-    emoji: "📋",
-    title: "Deals",
-    description: "Pipeline management for every active deal. Track value, stage, and probability — and spot bottlenecks before they cost you.",
-  },
-  {
-    target: "tour-documents",
-    emoji: "📁",
-    title: "Documents",
-    description: "Central file storage for contracts, proposals, and property docs. Share with clients directly from the CRM — no email needed.",
-  },
-  {
-    target: "tour-calendar",
-    emoji: "📅",
-    title: "Calendar",
-    description: "Schedule site visits, calls, and follow-ups. Your full agenda synced with your leads and team — never miss a meeting again.",
-  },
-  {
-    target: "tour-settings",
-    emoji: "⚙️",
-    title: "Settings",
-    description: "Customize your workspace — branding, integrations, notifications, and account preferences. Make this CRM truly yours.",
-  },
+  { target: "tour-dashboard",   emoji: "🏠", color: "#f59e0b", title: "Dashboard Overview",  description: "Your command center — live pipeline metrics, revenue forecasts, recent activity, and today's priorities all in one glance." },
+  { target: "tour-leads",       emoji: "👥", color: "#3b82f6", title: "Leads",               description: "Capture, qualify, and nurture every prospect. Filter by source, status, or agent and track every touchpoint end-to-end." },
+  { target: "tour-messages",    emoji: "💬", color: "#10b981", title: "Messages",             description: "Your unified WhatsApp inbox. Reply to leads, send media, and have every conversation logged automatically in the CRM." },
+  { target: "tour-properties",  emoji: "🏢", color: "#8b5cf6", title: "Properties",           description: "Manage your full portfolio. Add listings, attach photos and floor plans, and instantly match properties to the right leads." },
+  { target: "tour-dealers",     emoji: "🤝", color: "#ec4899", title: "Dealers",              description: "Track your network of dealers and brokers — active listings, commission records, and referral performance over time." },
+  { target: "tour-analytics",   emoji: "📊", color: "#06b6d4", title: "Analytics",            description: "Data-driven insights on lead conversion, team performance, and revenue pipeline. Export beautiful reports in one click." },
+  { target: "tour-ai",          emoji: "🧠", color: "#7c3aed", title: "AI Intelligence",      description: "Your AI co-pilot. Ask anything about a lead, get closing strategies, draft follow-ups, and surface your hottest deals." },
+  { target: "tour-automations", emoji: "⚡", color: "#f97316", title: "Automations",          description: "No-code workflows on autopilot — auto-send WhatsApp, assign leads by rules, and follow up without lifting a finger." },
+  { target: "tour-team",        emoji: "👨‍💼", color: "#0ea5e9", title: "Team",                 description: "Manage agents, assign roles, and track individual performance. Invite members and fine-tune access permissions per role." },
+  { target: "tour-deals",       emoji: "📋", color: "#84cc16", title: "Deals",                description: "Pipeline management for every active deal. Track value, stage, and probability — spot bottlenecks before they cost you." },
+  { target: "tour-documents",   emoji: "📁", color: "#f59e0b", title: "Documents",            description: "Central file storage for contracts, proposals, and property docs. Share directly with clients — no email needed." },
+  { target: "tour-calendar",    emoji: "📅", color: "#ef4444", title: "Calendar",             description: "Schedule site visits, calls, and follow-ups. Your full agenda synced with your leads and team — never miss a meeting." },
+  { target: "tour-settings",    emoji: "⚙️", color: "#6b7280", title: "Settings",             description: "Customize your workspace — branding, integrations, notifications, and account preferences. Make the CRM truly yours." },
 ]
 
 const STORAGE_KEY_PREFIX = "lxs-tour-done-"
-const PAD = 10
-const TOOLTIP_W = 344
-
-// ── Component ──────────────────────────────────────────────────────────────
+const PAD = 8
+const CARD_W = 352
+const CARD_H = 220
 
 interface CRMTourProps {
   onExpand?: () => void
@@ -117,39 +49,29 @@ export function CRMTour({ onExpand }: CRMTourProps) {
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
-  const [tooltipTop, setTooltipTop] = useState(0)
-  const [tooltipLeft, setTooltipLeft] = useState(0)
+  const [cardTop, setCardTop] = useState(0)
+  const [cardLeft, setCardLeft] = useState(0)
+  const [arrowY, setArrowY] = useState("50%")
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight })
 
-  // ── Check conditions and auto-start ──────────────────────────────────────
   useEffect(() => {
     if (!profile?.onboarded || !storageKey) return
-    try {
-      if (localStorage.getItem(storageKey)) return
-    } catch {}
-    const t = setTimeout(() => {
-      setVisible(true)
-      onExpandRef.current?.()
-    }, 900)
+    try { if (localStorage.getItem(storageKey)) return } catch {}
+    const t = setTimeout(() => { setVisible(true); onExpandRef.current?.() }, 900)
     return () => clearTimeout(t)
   }, [profile?.onboarded, storageKey])
 
-  // ── Track viewport size ───────────────────────────────────────────────────
   useEffect(() => {
     const h = () => setWinSize({ w: window.innerWidth, h: window.innerHeight })
     window.addEventListener("resize", h)
     return () => window.removeEventListener("resize", h)
   }, [])
 
-  // ── Persist completion ────────────────────────────────────────────────────
   const completeTour = useCallback(() => {
     setVisible(false)
-    if (storageKey) {
-      try { localStorage.setItem(storageKey, "1") } catch {}
-    }
+    if (storageKey) { try { localStorage.setItem(storageKey, "1") } catch {} }
   }, [storageKey])
 
-  // ── Measure target element & compute positions ────────────────────────────
   const measure = useCallback((s: number) => {
     const el = document.querySelector(`[data-tour="${STEPS[s]?.target}"]`)
     if (!el) {
@@ -160,14 +82,21 @@ export function CRMTour({ onExpand }: CRMTourProps) {
     const r = el.getBoundingClientRect()
     setRect(r)
 
-    const { w, h } = { w: window.innerWidth, h: window.innerHeight }
-    const TOOLTIP_H = 228
+    const vw = window.innerWidth
+    const vh = window.innerHeight
     let left = r.right + 20
-    let top = r.top + r.height / 2 - TOOLTIP_H / 2
-    if (left + TOOLTIP_W > w - 12) left = Math.max(12, r.left - TOOLTIP_W - 20)
-    top = Math.max(12, Math.min(top, h - TOOLTIP_H - 12))
-    setTooltipTop(top)
-    setTooltipLeft(left)
+    let top = r.top + r.height / 2 - CARD_H / 2
+
+    if (left + CARD_W > vw - 12) left = Math.max(12, r.left - CARD_W - 20)
+    top = Math.max(12, Math.min(top, vh - CARD_H - 12))
+
+    setCardLeft(left)
+    setCardTop(top)
+
+    // arrow vertical offset relative to card top
+    const targetCenterY = r.top + r.height / 2
+    const relY = targetCenterY - top
+    setArrowY(`${Math.max(20, Math.min(relY, CARD_H - 20))}px`)
   }, [completeTour])
 
   useEffect(() => {
@@ -187,39 +116,56 @@ export function CRMTour({ onExpand }: CRMTourProps) {
   const { w, h } = winSize
   const cur = STEPS[step]
   const isLast = step === STEPS.length - 1
+  const progress = (step + 1) / STEPS.length
+
+  const arrowOnLeft = cardLeft > (rect?.right ?? 0)
 
   const panels = rect
     ? [
-        { top: 0,                left: 0,              width: w,                            height: Math.max(0, rect.top - PAD) },
-        { top: rect.top - PAD,   left: 0,              width: Math.max(0, rect.left - PAD), height: rect.height + PAD * 2 },
-        { top: rect.top - PAD,   left: rect.right + PAD, width: Math.max(0, w - rect.right - PAD), height: rect.height + PAD * 2 },
-        { top: rect.bottom + PAD, left: 0,             width: w,                            height: Math.max(0, h - rect.bottom - PAD) },
+        { t: 0,               l: 0,              W: w,                              H: Math.max(0, rect.top - PAD) },
+        { t: rect.top - PAD,  l: 0,              W: Math.max(0, rect.left - PAD),   H: rect.height + PAD * 2 },
+        { t: rect.top - PAD,  l: rect.right + PAD, W: Math.max(0, w - rect.right - PAD), H: rect.height + PAD * 2 },
+        { t: rect.bottom + PAD, l: 0,            W: w,                              H: Math.max(0, h - rect.bottom - PAD) },
       ]
-    : [{ top: 0, left: 0, width: w, height: h }]
+    : [{ t: 0, l: 0, W: w, H: h }]
 
   return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 9980, pointerEvents: "none" }}>
 
-      {/* ── Dark backdrop (4 panels with spotlight hole) ── */}
+      {/* ── Backdrop panels ── */}
       {panels.map((p, i) => (
         <div
           key={i}
           style={{
             position: "fixed",
-            background: "rgba(0,0,0,0.64)",
-            top: p.top, left: p.left, width: p.width, height: p.height,
+            background: "rgba(2,6,12,0.72)",
+            backdropFilter: "blur(1.5px)",
+            WebkitBackdropFilter: "blur(1.5px)",
+            top: p.t, left: p.l, width: p.W, height: p.H,
             pointerEvents: "all",
           }}
         />
       ))}
 
-      {/* ── Spotlight ring ── */}
+      {/* ── Spotlight ring with pulse ── */}
       {rect && (
         <motion.div
           key={`ring-${step}`}
-          initial={{ opacity: 0, scale: 0.88 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 360, damping: 26 }}
+          initial={{ opacity: 0, scale: 0.82 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            boxShadow: [
+              `0 0 0 2px ${cur.color}, 0 0 0 5px ${cur.color}44, 0 0 28px 6px ${cur.color}28`,
+              `0 0 0 2px ${cur.color}, 0 0 0 10px ${cur.color}18, 0 0 44px 14px ${cur.color}10`,
+              `0 0 0 2px ${cur.color}, 0 0 0 5px ${cur.color}44, 0 0 28px 6px ${cur.color}28`,
+            ],
+          }}
+          transition={{
+            opacity: { duration: 0.25 },
+            scale: { type: "spring", stiffness: 300, damping: 22 },
+            boxShadow: { duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 0.3 },
+          }}
           style={{
             position: "fixed",
             top: rect.top - PAD,
@@ -227,7 +173,6 @@ export function CRMTour({ onExpand }: CRMTourProps) {
             width: rect.width + PAD * 2,
             height: rect.height + PAD * 2,
             borderRadius: 12,
-            boxShadow: "0 0 0 2.5px hsl(var(--primary)), 0 0 28px 10px hsl(var(--primary) / 0.25)",
             pointerEvents: "none",
             zIndex: 9982,
           }}
@@ -238,97 +183,268 @@ export function CRMTour({ onExpand }: CRMTourProps) {
       <AnimatePresence mode="wait">
         <motion.div
           key={`card-${step}`}
-          initial={{ opacity: 0, y: 10, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 440, damping: 34 }}
+          initial={{ opacity: 0, x: arrowOnLeft ? 8 : -8, scale: 0.94 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: arrowOnLeft ? -8 : 8, scale: 0.94 }}
+          transition={{ type: "spring", stiffness: 450, damping: 32 }}
           style={{
             position: "fixed",
-            top: tooltipTop,
-            left: tooltipLeft,
-            width: TOOLTIP_W,
+            top: cardTop,
+            left: cardLeft,
+            width: CARD_W,
             zIndex: 9990,
             pointerEvents: "all",
           }}
-          className="rounded-2xl border border-border/60 bg-card shadow-[0_20px_60px_-12px_rgba(0,0,0,0.5)] overflow-hidden"
         >
-          {/* Header */}
-          <div className="relative px-5 pt-4 pb-3.5 border-b border-border/40 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-2xl shadow-sm ring-1 ring-primary/20">
-                {cur.emoji}
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <Map className="h-3 w-3 text-primary" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                    Step {step + 1} of {STEPS.length}
-                  </span>
+          {/* Arrow caret pointing toward the spotlight */}
+          {arrowOnLeft ? (
+            <div
+              style={{
+                position: "absolute",
+                left: -9,
+                top: arrowY,
+                transform: "translateY(-50%)",
+                width: 0,
+                height: 0,
+                borderTop: "9px solid transparent",
+                borderBottom: "9px solid transparent",
+                borderRight: "9px solid hsl(var(--card))",
+                zIndex: 1,
+                filter: "drop-shadow(-2px 0 2px rgba(0,0,0,0.15))",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                position: "absolute",
+                right: -9,
+                top: arrowY,
+                transform: "translateY(-50%)",
+                width: 0,
+                height: 0,
+                borderTop: "9px solid transparent",
+                borderBottom: "9px solid transparent",
+                borderLeft: "9px solid hsl(var(--card))",
+                zIndex: 1,
+                filter: "drop-shadow(2px 0 2px rgba(0,0,0,0.15))",
+              }}
+            />
+          )}
+
+          {/* Card */}
+          <div
+            style={{
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border) / 0.5)",
+              boxShadow: "0 24px 64px -8px rgba(0,0,0,0.55), 0 4px 16px -2px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04)",
+            }}
+          >
+            {/* Accent stripe */}
+            <div
+              style={{
+                height: 3,
+                background: `linear-gradient(90deg, ${cur.color}, ${cur.color}88)`,
+              }}
+            />
+
+            <div style={{ padding: "18px 20px 18px" }}>
+              {/* Header row */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                  {/* Emoji badge */}
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: `${cur.color}1a`,
+                      border: `1.5px solid ${cur.color}33`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {cur.emoji}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                          color: cur.color,
+                          opacity: 0.9,
+                        }}
+                      >
+                        {step + 1} / {STEPS.length}
+                      </span>
+                      {/* Step dots mini-track */}
+                      <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+                        {STEPS.map((_, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              width: i === step ? 12 : 4,
+                              height: 3,
+                              borderRadius: 99,
+                              background: i <= step ? cur.color : "hsl(var(--muted-foreground) / 0.25)",
+                              transition: "all 0.3s ease",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <h3
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: "hsl(var(--foreground))",
+                        lineHeight: 1.2,
+                        margin: 0,
+                      }}
+                    >
+                      {cur.title}
+                    </h3>
+                  </div>
                 </div>
-                <h3 className="text-[15px] font-bold text-foreground leading-tight">
-                  {cur.title}
-                </h3>
+
+                {/* Close button */}
+                <button
+                  onClick={completeTour}
+                  aria-label="Close tour"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "hsl(var(--muted-foreground))",
+                    flexShrink: 0,
+                    marginLeft: 8,
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = "hsl(var(--secondary))"
+                    ;(e.currentTarget as HTMLElement).style.color = "hsl(var(--foreground))"
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = "transparent"
+                    ;(e.currentTarget as HTMLElement).style.color = "hsl(var(--muted-foreground))"
+                  }}
+                >
+                  <X style={{ width: 13, height: 13 }} />
+                </button>
               </div>
-              <button
-                onClick={completeTour}
-                className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
-                aria-label="Close tour"
+
+              {/* Description */}
+              <p
+                style={{
+                  fontSize: 13.5,
+                  color: "hsl(var(--muted-foreground))",
+                  lineHeight: 1.65,
+                  margin: 0,
+                  marginBottom: 16,
+                }}
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
+                {cur.description}
+              </p>
 
-          {/* Body */}
-          <div className="px-5 py-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {cur.description}
-            </p>
-
-            {/* Progress track */}
-            <div className="flex items-center gap-1 mt-4 mb-4">
-              {STEPS.map((_, i) => (
-                <div
-                  key={i}
-                  style={{ transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)" }}
-                  className={
-                    i === step
-                      ? "h-1.5 w-5 rounded-full bg-primary"
-                      : i < step
-                      ? "h-1.5 w-1.5 rounded-full bg-primary/45"
-                      : "h-1.5 w-1.5 rounded-full bg-muted/55"
-                  }
+              {/* Progress bar */}
+              <div
+                style={{
+                  height: 3,
+                  borderRadius: 99,
+                  background: "hsl(var(--muted) / 0.5)",
+                  overflow: "hidden",
+                  marginBottom: 16,
+                }}
+              >
+                <motion.div
+                  animate={{ width: `${progress * 100}%` }}
+                  transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+                  style={{
+                    height: "100%",
+                    borderRadius: 99,
+                    background: `linear-gradient(90deg, ${cur.color}, ${cur.color}cc)`,
+                  }}
                 />
-              ))}
-            </div>
+              </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={completeTour}
-                className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Skip tour
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleNext}
-                className="h-8 gap-1.5 px-4 text-xs font-semibold"
-              >
-                {isLast ? (
-                  <>
-                    <CheckCheck className="h-3.5 w-3.5" />
-                    Finish
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </>
-                )}
-              </Button>
+              {/* Action row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <button
+                  onClick={completeTour}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12.5,
+                    color: "hsl(var(--muted-foreground))",
+                    padding: "6px 0",
+                    fontWeight: 500,
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--foreground))" }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "hsl(var(--muted-foreground))" }}
+                >
+                  Skip tour
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    paddingLeft: 18,
+                    paddingRight: 18,
+                    paddingTop: 8,
+                    paddingBottom: 8,
+                    borderRadius: 9,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#fff",
+                    background: cur.color,
+                    boxShadow: `0 4px 14px -2px ${cur.color}66`,
+                    transition: "opacity 0.15s, transform 0.15s, box-shadow 0.15s",
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.opacity = "0.88"
+                    ;(e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"
+                    ;(e.currentTarget as HTMLElement).style.boxShadow = `0 8px 20px -2px ${cur.color}88`
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.opacity = "1"
+                    ;(e.currentTarget as HTMLElement).style.transform = "translateY(0)"
+                    ;(e.currentTarget as HTMLElement).style.boxShadow = `0 4px 14px -2px ${cur.color}66`
+                  }}
+                >
+                  {isLast ? (
+                    <>
+                      <CheckCheck style={{ width: 14, height: 14 }} />
+                      Finish tour
+                    </>
+                  ) : (
+                    <>
+                      Next
+                      <ArrowRight style={{ width: 14, height: 14 }} />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
