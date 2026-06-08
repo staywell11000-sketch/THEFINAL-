@@ -3,6 +3,7 @@ import { useLocation } from "wouter"
 import { Link } from "wouter"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { NotificationsPanel, type Notification } from "@/components/dashboard/notifications-panel"
+import { SupportChatWidget } from "@/components/dashboard/support-chat-widget"
 import { ReactNode } from "react"
 import { motion } from "framer-motion"
 import { Bell, Search, Clock, X, ChevronRight } from "lucide-react"
@@ -363,6 +364,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </motion.main>
       </div>
+      <SupportChatWidget />
     </div>
   )
 }
