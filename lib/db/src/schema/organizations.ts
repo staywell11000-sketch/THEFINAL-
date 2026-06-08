@@ -12,6 +12,9 @@ export const organizations = pgTable("organizations", {
   isSuspended: boolean("is_suspended").notNull().default(false),
   aiRequestsUsed: integer("ai_requests_used").notNull().default(0),
   aiRequestsResetAt: timestamp("ai_requests_reset_at"),
+  supportAccessEnabled: boolean("support_access_enabled").notNull().default(false),
+  supportAccessEnabledBy: varchar("support_access_enabled_by", { length: 255 }),
+  supportAccessEnabledAt: timestamp("support_access_enabled_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

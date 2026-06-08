@@ -65,6 +65,7 @@ import AdminOrganizations from "@/pages/admin/organizations"
 import AdminPayments from "@/pages/admin/payments"
 import AdminAiUsage from "@/pages/admin/ai-usage"
 import AdminAuditLogs from "@/pages/admin/audit-logs"
+import AdminSupport from "@/pages/admin/support"
 import { LanguageProvider } from "@/lib/i18n"
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "")
@@ -193,6 +194,7 @@ function AdminRoutes() {
           <Route path="/admin/payments" component={AdminPayments} />
           <Route path="/admin/ai-usage" component={AdminAiUsage} />
           <Route path="/admin/audit-logs" component={AdminAuditLogs} />
+          <Route path="/admin/support" component={AdminSupport} />
           <Route component={NotFound} />
         </Switch>
       </AdminLayout>

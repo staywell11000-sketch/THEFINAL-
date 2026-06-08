@@ -2,7 +2,7 @@ import { ReactNode } from "react"
 import { Link, useLocation } from "wouter"
 import { useSuperAdmin } from "@/lib/plan-context"
 import { Redirect } from "wouter"
-import { LayoutDashboard, Building2, CreditCard, FileText, Zap, Settings, ChevronRight } from "lucide-react"
+import { LayoutDashboard, Building2, CreditCard, FileText, Zap, Settings, ChevronRight, HeadphonesIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const NAV = [
@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/ai-usage", label: "AI Usage", icon: Zap },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: FileText },
+  { href: "/admin/support", label: "Support", icon: HeadphonesIcon },
 ]
 
 export function AdminLayout({ children }: { children: ReactNode }) {

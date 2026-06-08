@@ -26,6 +26,8 @@ import addonsRouter from "./addons";
 import facebookRouter from "./facebook";
 import invitationsRouter from "./invitations";
 import orgMembersRouter from "./orgMembers";
+import supportRouter from "./support";
+import privacyRouter from "./privacy";
 
 const router: IRouter = Router();
 
@@ -56,5 +58,7 @@ router.use(addonsRouter);
 router.use(facebookRouter);
 router.use(invitationsRouter);
 router.use(orgMembersRouter);
+router.use(supportRouter);
+router.use(privacyRouter);
 
 export default router;

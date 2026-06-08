@@ -18,8 +18,16 @@ import {
   Check, Lock, Clock, Mail, Save, RefreshCw, AlertCircle,
   Smartphone, KeyRound, LogOut, Trash2, Download, UserCog,
   Eye, EyeOff, ShieldCheck, MonitorSmartphone, Copy, CheckCheck,
-  Globe, UserCircle2, CreditCard,
+  Globe, UserCircle2, CreditCard, ShieldAlert, HeadphonesIcon,
+  FileDown, ToggleLeft, ToggleRight, ChevronDown, ChevronRight as ChevronRightIcon,
+  FileText, Database, History, Plus, HelpCircle,
 } from "lucide-react"
+import {
+  useTickets, useCreateTicket, useTicket, useSendMessage,
+  usePrivacySettings, useToggleSupportAccess, usePrivacyAuditLog, useDataExport,
+  STATUS_LABELS, STATUS_COLORS, type TicketStatus,
+} from "@/lib/support-api"
+import { format } from "date-fns"
 import { THEMES } from "@/lib/themes"
 
 // ─── Tab Config ───────────────────────────────────────────
@@ -32,6 +40,8 @@ const TABS = [
   { id: "security",     label: "Security",           icon: Shield },
   { id: "accounts",     label: "Connected Accounts", icon: Link2 },
   { id: "account",      label: "Account",            icon: UserCog },
+  { id: "privacy",      label: "Privacy & Security", icon: ShieldAlert },
+  { id: "support",      label: "Support",            icon: HeadphonesIcon },
 ]
 
 // ─── Toggle Switch ────────────────────────────────────────
@@ -1422,9 +1432,554 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {/* ─── Privacy & Security ───────────────────── */}
+            {activeTab === "privacy" && <PrivacyTab />}
+
+            {/* ─── Support ──────────────────────────────── */}
+            {activeTab === "support" && <SupportTab />}
+
           </motion.div>
         </AnimatePresence>
       </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// PRIVACY TAB
+// ──────────────────────────────────────────────────────────────────────────────
+function PrivacyTab() {
+  const { data: privData, isPending: privLoading } = usePrivacySettings()
+  const { data: auditData } = usePrivacyAuditLog()
+  const toggleAccess = useToggleSupportAccess()
+  const exportData = useDataExport()
+  const [exportTypes, setExportTypes] = useState<string[]>(["leads", "deals", "properties", "contacts"])
+  const [exporting, setExporting] = useState(false)
+
+  const settings = privData?.settings
+  const accessEnabled: boolean = settings?.support_access_enabled ?? false
+  const auditLogs: any[] = auditData?.data ?? []
+
+  const handleToggle = async () => {
+    const next = !accessEnabled
+    try {
+      await toggleAccess.mutateAsync(next)
+      toast.success(next ? "Support access enabled" : "Support access disabled")
+    } catch {
+      toast.error("Failed to update support access")
+    }
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const result = await exportData.mutateAsync(exportTypes)
+      if (result.error) { toast.error(result.error); return }
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `luxestate-export-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success("Data exported successfully")
+    } catch {
+      toast.error("Export failed")
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const EXPORT_TYPES = [
+    { id: "leads",      label: "Leads" },
+    { id: "deals",      label: "Deals" },
+    { id: "properties", label: "Properties" },
+    { id: "contacts",   label: "Contacts" },
+    { id: "documents",  label: "Documents Metadata" },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {/* Trust Banner */}
+      <div className="glass-card p-5 border-l-4 border-l-primary bg-primary/5">
+        <div className="flex items-start gap-3">
+          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground text-sm">Your Data is Yours</h3>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              Your business data remains private. CRM administrators cannot access your leads, conversations, documents, or customer information unless you explicitly enable support access.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Ownership */}
+      <div className="glass-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-secondary/50 flex items-center justify-center">
+            <Database className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Data Ownership</h3>
+            <p className="text-sm text-muted-foreground">You own all data in your organization</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {[
+            { icon: "👤", label: "Leads & Contacts", desc: "Names, phones, emails — fully private" },
+            { icon: "💬", label: "Conversations", desc: "WhatsApp & message history — isolated" },
+            { icon: "📄", label: "Documents", desc: "Files and metadata — your control only" },
+            { icon: "🏠", label: "Deals & Properties", desc: "Transaction data — never shared" },
+          ].map(item => (
+            <div key={item.label} className="rounded-xl border border-border/50 bg-secondary/10 px-4 py-3.5 flex items-start gap-3">
+              <span className="text-base mt-0.5">{item.icon}</span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{item.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Support Access */}
+      <div className="glass-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center", accessEnabled ? "bg-amber-100" : "bg-secondary/50")}>
+            <Lock className={cn("h-4 w-4", accessEnabled ? "text-amber-600" : "text-muted-foreground")} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-semibold text-foreground">Support Access</h3>
+            <p className="text-sm text-muted-foreground">Allow support staff to access your data for troubleshooting</p>
+          </div>
+          <button
+            onClick={handleToggle}
+            disabled={toggleAccess.isPending || privLoading}
+            className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none disabled:opacity-50"
+            style={{ backgroundColor: accessEnabled ? "hsl(var(--primary))" : "hsl(var(--secondary))" }}
+          >
+            <span
+              className="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform"
+              style={{ transform: accessEnabled ? "translateX(20px)" : "translateX(0)" }}
+            />
+          </button>
+        </div>
+        {accessEnabled && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-500/30 p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-400">Support Access is Active</p>
+                <p className="text-xs text-amber-700 dark:text-amber-500 mt-1 leading-relaxed">
+                  Support staff can temporarily access your organization's data for troubleshooting. All access is logged. Disable when your issue is resolved.
+                </p>
+                {settings?.support_access_enabled_at && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    Enabled: {format(new Date(settings.support_access_enabled_at), "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Only organization admins can change this setting. All changes are logged for your review.
+        </p>
+      </div>
+
+      {/* Data Export */}
+      <div className="glass-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-secondary/50 flex items-center justify-center">
+            <FileDown className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Data Export</h3>
+            <p className="text-sm text-muted-foreground">Download a copy of your organization's data</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {EXPORT_TYPES.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setExportTypes(prev =>
+                prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id]
+              )}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                exportTypes.includes(t.id)
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/50 bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+              )}
+            >
+              <Check className={cn("h-3 w-3", exportTypes.includes(t.id) ? "opacity-100" : "opacity-0")} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <Button
+          onClick={handleExport}
+          disabled={exportTypes.length === 0 || exporting}
+          variant="outline"
+          className="gap-2"
+        >
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Export Selected Data
+        </Button>
+        <p className="text-xs text-muted-foreground">Data is exported as JSON. All exports are logged in your audit history.</p>
+      </div>
+
+      {/* Data Deletion Policy */}
+      <div className="glass-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Data Deletion Policy</h3>
+            <p className="text-sm text-muted-foreground">What happens to your data when you leave</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {[
+            "Your data is retained for 30 days after account closure for recovery purposes.",
+            "After 30 days, all leads, deals, conversations, and documents are permanently deleted.",
+            "Backup snapshots are deleted within 90 days.",
+            "To request immediate deletion, contact support@luxestate.app.",
+          ].map((item, i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground mt-1.5 shrink-0" />
+              <p className="text-sm text-muted-foreground">{item}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Audit Log */}
+      {auditLogs.length > 0 && (
+        <div className="glass-card p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-secondary/50 flex items-center justify-center">
+              <History className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Privacy Audit Log</h3>
+              <p className="text-sm text-muted-foreground">Recent privacy and access events</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {auditLogs.slice(0, 10).map((log: any) => (
+              <div key={log.id} className="flex items-center justify-between rounded-lg border border-border/40 bg-secondary/10 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <div className={cn("h-2 w-2 rounded-full shrink-0", {
+                    "bg-amber-400": log.action === "support_access_enabled",
+                    "bg-green-500": log.action === "support_access_disabled",
+                    "bg-blue-500": log.action === "data_exported",
+                    "bg-muted-foreground": true,
+                  })} />
+                  <p className="text-xs font-medium text-foreground capitalize">
+                    {log.action.replace(/_/g, " ")}
+                  </p>
+                  {(log.first_name || log.last_name) && (
+                    <p className="text-xs text-muted-foreground">by {log.first_name} {log.last_name}</p>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">{format(new Date(log.created_at), "MMM d, h:mm a")}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SUPPORT TAB
+// ──────────────────────────────────────────────────────────────────────────────
+function SupportTab() {
+  const { data, isPending } = useTickets()
+  const tickets: any[] = data?.data ?? []
+  const [view, setView] = useState<"list" | "new" | "ticket">("list")
+  const [activeTicketId, setActiveTicketId] = useState<number | null>(null)
+  const [subject, setSubject] = useState("")
+  const [message, setMessage] = useState("")
+  const [replyText, setReplyText] = useState("")
+  const create = useCreateTicket()
+  const { data: ticketData, isFetching: ticketLoading } = useTicket(activeTicketId)
+  const send = useSendMessage(activeTicketId ?? 0)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  const openTickets = tickets.filter(t => ["open", "in_progress", "waiting_customer"].includes(t.status))
+  const closedTickets = tickets.filter(t => ["resolved", "closed"].includes(t.status))
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [ticketData?.messages?.length])
+
+  const handleCreate = async () => {
+    if (!subject.trim() || !message.trim()) return
+    const res = await create.mutateAsync({ subject: subject.trim(), message: message.trim() })
+    if (!res.error) { setSubject(""); setMessage(""); setView("list"); toast.success("Support ticket created") }
+  }
+
+  const handleReply = async () => {
+    if (!replyText.trim() || !activeTicketId) return
+    const msg = replyText.trim()
+    setReplyText("")
+    await send.mutateAsync(msg)
+  }
+
+  const ticket = ticketData?.ticket
+  const messages: any[] = ticketData?.messages ?? []
+
+  const FAQS = [
+    { q: "How do I connect my WhatsApp number?", a: "Go to Settings → Connected Accounts → WhatsApp. You'll need a Meta Business account." },
+    { q: "How do I invite team members?", a: "Go to Settings → Business → scroll to Team Management and click Invite Member." },
+    { q: "Why can't I see some features?", a: "Feature access depends on your subscription plan. Visit the Billing page to upgrade." },
+    { q: "How do I bulk import leads?", a: "On the Leads page, click the import icon and upload a CSV with the required columns." },
+    { q: "How do I export my data?", a: "Go to Settings → Privacy & Security → Data Export and select what to export." },
+    { q: "How do I reset my password?", a: "Sign out and use the 'Forgot Password' link on the sign-in page." },
+  ]
+
+  if (view === "new") return (
+    <div className="space-y-4 max-w-2xl">
+      <div className="flex items-center gap-3">
+        <button onClick={() => setView("list")} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronRightIcon className="h-4 w-4 rotate-180" />
+          Back
+        </button>
+        <h3 className="text-base font-semibold text-foreground">New Support Ticket</h3>
+      </div>
+      <div className="glass-card p-6 space-y-4">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            🔒 <strong className="text-foreground">Privacy reminder:</strong> Your business data remains private. Support staff cannot access your leads, conversations, or customer information unless you explicitly enable support access in the Privacy & Security tab.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-foreground">Subject</label>
+          <Input
+            placeholder="Brief description of your issue"
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            className={surfaceInputClass}
+            maxLength={200}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-foreground">Message</label>
+          <textarea
+            className={cn(surfaceInputClass, "w-full resize-none min-h-[120px]")}
+            placeholder="Describe your issue in detail..."
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            rows={5}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleCreate} disabled={!subject.trim() || !message.trim() || create.isPending} className="gap-2">
+            {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <HeadphonesIcon className="h-4 w-4" />}
+            Submit Ticket
+          </Button>
+          <Button variant="outline" onClick={() => setView("list")}>Cancel</Button>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (view === "ticket" && activeTicketId) return (
+    <div className="space-y-4 max-w-2xl">
+      <div className="flex items-center gap-3">
+        <button onClick={() => { setView("list"); setActiveTicketId(null) }} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronRightIcon className="h-4 w-4 rotate-180" />
+          Back to Tickets
+        </button>
+        {ticket && (
+          <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", STATUS_COLORS[ticket.status as TicketStatus])}>
+            {STATUS_LABELS[ticket.status as TicketStatus]}
+          </span>
+        )}
+        {ticketLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+      </div>
+      {ticket && <h3 className="text-base font-semibold text-foreground">{ticket.subject}</h3>}
+      <div className="glass-card overflow-hidden">
+        <div className="max-h-[400px] overflow-y-auto p-4 space-y-4">
+          {messages.map(msg => {
+            const isSupport = msg.sender_type === "support"
+            return (
+              <div key={msg.id} className={cn("flex gap-3", isSupport ? "flex-row" : "flex-row-reverse")}>
+                <div className={cn(
+                  "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                  isSupport ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                )}>
+                  {isSupport ? "🛡️" : `${msg.first_name?.[0] ?? ""}${msg.last_name?.[0] ?? ""}`}
+                </div>
+                <div className={cn("max-w-[75%] flex flex-col", isSupport ? "items-start" : "items-end")}>
+                  <div className={cn("rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+                    isSupport
+                      ? "bg-secondary text-foreground rounded-tl-none"
+                      : "bg-primary text-primary-foreground rounded-tr-none"
+                  )}>
+                    <p className="whitespace-pre-wrap break-words">{msg.message}</p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{format(new Date(msg.created_at), "MMM d, h:mm a")}</p>
+                </div>
+              </div>
+            )
+          })}
+          <div ref={bottomRef} />
+        </div>
+        {ticket && !["resolved", "closed"].includes(ticket.status) && (
+          <div className="border-t p-3 flex gap-2">
+            <textarea
+              className={cn(surfaceInputClass, "flex-1 resize-none min-h-[40px] max-h-[100px] text-sm py-2")}
+              placeholder="Reply to support..."
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleReply() } }}
+              rows={1}
+            />
+            <Button onClick={handleReply} disabled={!replyText.trim() || send.isPending} size="sm">
+              {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* Support Status */}
+      <div className="glass-card p-5 border-l-4 border-l-green-500 bg-green-500/5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Support is Online</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Average response time: 2–4 hours during business hours</p>
+            </div>
+          </div>
+          <Button onClick={() => setView("new")} size="sm" className="gap-1.5 shrink-0">
+            <Plus className="h-4 w-4" />
+            New Ticket
+          </Button>
+        </div>
+      </div>
+
+      {/* Trust message */}
+      <div className="rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          🔒 <strong className="text-foreground">Your data stays private.</strong> Support staff cannot view your leads, conversations, documents, or customer data unless you enable Support Access in Privacy & Security settings.
+        </p>
+      </div>
+
+      {/* Open tickets */}
+      {openTickets.length > 0 && (
+        <div className="glass-card p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Open Tickets ({openTickets.length})</h3>
+          <div className="space-y-2">
+            {openTickets.map(t => (
+              <button
+                key={t.id}
+                onClick={() => { setActiveTicketId(t.id); setView("ticket") }}
+                className="w-full text-left rounded-xl border border-border/60 bg-background hover:border-primary/30 hover:bg-secondary/30 transition-all px-4 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{t.subject}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.message_count} message{t.message_count !== 1 ? "s" : ""} · {format(new Date(t.updated_at), "MMM d, yyyy")}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full border", STATUS_COLORS[t.status as TicketStatus])}>
+                      {STATUS_LABELS[t.status as TicketStatus]}
+                    </span>
+                    <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Closed tickets */}
+      {closedTickets.length > 0 && (
+        <div className="glass-card p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Ticket History</h3>
+          <div className="space-y-2">
+            {closedTickets.map(t => (
+              <button
+                key={t.id}
+                onClick={() => { setActiveTicketId(t.id); setView("ticket") }}
+                className="w-full text-left rounded-xl border border-border/40 bg-secondary/10 hover:bg-secondary/20 transition-colors px-4 py-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-foreground truncate flex-1">{t.subject}</p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full border", STATUS_COLORS[t.status as TicketStatus])}>
+                      {STATUS_LABELS[t.status as TicketStatus]}
+                    </span>
+                    <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tickets.length === 0 && !isPending && (
+        <div className="glass-card p-10 text-center space-y-3">
+          <HeadphonesIcon className="h-12 w-12 mx-auto text-muted-foreground/30" />
+          <div>
+            <p className="text-sm font-medium text-foreground">No tickets yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Create a support ticket and our team will respond shortly</p>
+          </div>
+          <Button onClick={() => setView("new")} className="mt-2 gap-2">
+            <Plus className="h-4 w-4" />
+            Create First Ticket
+          </Button>
+        </div>
+      )}
+
+      {/* FAQ */}
+      <div className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-secondary/50 flex items-center justify-center">
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Frequently Asked Questions</h3>
+            <p className="text-sm text-muted-foreground">Quick answers to common questions</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          {FAQS.map((faq, i) => (
+            <FaqItem key={i} question={faq.q} answer={faq.a} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="rounded-xl border border-border/50 overflow-hidden">
+      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-secondary/30 transition-colors">
+        <p className="text-sm font-medium text-foreground">{question}</p>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="px-4 pb-3 pt-0">
+          <p className="text-sm text-muted-foreground leading-relaxed">{answer}</p>
+        </div>
+      )}
     </div>
   )
 }
