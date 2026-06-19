@@ -1,6 +1,6 @@
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
-import * as pinoHttp from "pino-http";
+import pino from "pino";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -21,27 +21,18 @@ for (const v of requiredWhatsAppVars) {
 const app: Express = express();
 
 // FIX: create instance properly
-const httpLogger = pinoHttp();
+const loggerMiddleware = pino();
 
-app.use(
-  (pinoHttp as any)({
-    logger,
-    serializers: {
-      req(req: Request) {
-        return {
-          id: (req as any).id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
-      },
-      res(res: Response) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  })
-);
+app.use((req: any, res: any, next: any) => {
+  req.log = loggerMiddleware;
+
+  loggerMiddleware.info({
+    method: req.method,
+    url: req.url?.split("?")[0],
+  });
+
+  next();
+});
 
 app.use(cors({ credentials: true, origin: true }));
 
