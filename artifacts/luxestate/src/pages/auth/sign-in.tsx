@@ -124,7 +124,9 @@ export default function SignInPage() {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "")
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${base}/dashboard` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
     if (error) {
       const msg = error.message.toLowerCase()
